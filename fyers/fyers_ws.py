@@ -3,16 +3,12 @@ from core.tick_handler import tick_handler
 from dotenv import load_dotenv
 import os
 import warnings
-
 warnings.filterwarnings("ignore")
 load_dotenv()
 
 
-# ================= CALLBACKS =================
-
+# ----- CALLBACKS -----
 def onmessage(message):
-    print("📡 RAW MESSAGE RECEIVED:", message)
-
     if "ltp" not in message:
         return
 
@@ -21,48 +17,32 @@ def onmessage(message):
         "timestamp": message["exch_feed_time"],
         "symbol": message["symbol"]
     }
-
-    print("✅ TICK FORWARDED TO HANDLER")
     tick_handler.handle_tick(tick)
 
 
 def onerror(message):
-    print("❌ FYERS ERROR:", message)
+    print("Error:", message)
 
 
 def onclose(message):
-    print("⚠️ CONNECTION CLOSED:", message)
+    print("Connection closed:", message)
 
 
 def onopen():
-    print("🟢 WEBSOCKET CONNECTED SUCCESSFULLY")
-
     data_type = "SymbolUpdate"
     symbols = ["NSE:NIFTY50-INDEX"]
-
-    print("📊 Subscribing to symbols:", symbols)
 
     fyers.subscribe(symbols=symbols, data_type=data_type)
     fyers.keep_running()
 
 
-# ================= AUTH =================
-
+# ----- AUTH -----
 client_id = os.getenv("CLIENT_ID")
 access_token = os.getenv("ACCESS_TOKEN")
 
-print("===== DEBUG AUTH =====")
-print("CLIENT ID:", client_id)
-print("ACCESS TOKEN LENGTH:", len(access_token) if access_token else None)
-print("======================")
-
 ws_token = f"{client_id}:{access_token}"
 
-
-# ================= SOCKET =================
-
-print("🛠 Creating Fyers Websocket...")
-
+# ----- CREATE SOCKET -----
 fyers = data_ws.FyersDataSocket(
     access_token=ws_token,
     log_path="",
@@ -75,9 +55,6 @@ fyers = data_ws.FyersDataSocket(
     on_message=onmessage
 )
 
-
-# ================= CONNECT =================
-
+# ----- CONNECT -----
 def start():
-    print("🚀 Connecting to FYERS Websocket...")
     fyers.connect()
