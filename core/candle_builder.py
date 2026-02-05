@@ -2,7 +2,7 @@
 
 import datetime
 from core.state_machine import state_machine
-
+from utils.time_utils import epoch_to_ist
 
 class CandleBuilder:
     def __init__(self, timeframe_minutes: int = 5):
@@ -42,7 +42,7 @@ class CandleBuilder:
 
             if not self.startup_log_printed:
                 next_boundary = bucket + self.tf_seconds
-                human_time = datetime.datetime.fromtimestamp(next_boundary)
+                human_time = epoch_to_ist(next_boundary)
                 print(
                     f"[INIT] Waiting for next full "
                     f"{self.tf_seconds // 60}-minute candle at {human_time}",
