@@ -11,8 +11,9 @@ from core.state_machine import state_machine  # noqa: F401
 from core.breakout_watcher import breakout_watcher  # noqa: F401
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
-# Import FYERS websocket AFTER core is ready
 from fyers.fyers_ws import start
+from alerts.telegram_alert import telegram_alert
+from alerts.message_templates import system_start
 
 
     
@@ -21,6 +22,10 @@ from fyers.fyers_ws import start
 def main():
     print("Starting EMA Trend Algo...")
     print("Waiting for ticks from FYERS...\n")
+
+    # ⭐ SEND TELEGRAM ALERT HERE
+    telegram_alert.send(system_start())
+
     # Start FYERS WebSocket
     start()
 

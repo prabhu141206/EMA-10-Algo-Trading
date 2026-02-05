@@ -5,3 +5,4 @@ fyers-apiv3
 python-dotenv
 pytz
 psycopg2-binary
+python-telegram-bot

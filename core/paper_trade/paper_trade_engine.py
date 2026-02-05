@@ -3,6 +3,8 @@ from utils.db_logger import db_logger
 from utils.time_utils import epoch_to_ist
 from core.state_machine import state_machine
 from utils.logger import log_event
+from alerts.telegram_alert import telegram_alert
+from alerts.message_templates import trade_exit, paper_trade_entry
 
 
 class PaperTradeEngine:
@@ -68,6 +70,18 @@ class PaperTradeEngine:
             entry_price=option_entry_price,
             sl_price=self.sl,
             target_price=self.target
+        )
+
+
+        # ---------- SENDING ALERTS ------------
+        telegram_alert.send(
+            paper_trade_entry(
+                direction,
+                option_entry_price,
+                self.sl,
+                self.target,
+                delta
+            )
         )
 
     # --------------------------------------------------
@@ -151,6 +165,17 @@ class PaperTradeEngine:
             ts=ts
         )
 
+        # ---------- SENDING ALERTS ------------
+
+        telegram_alert.send(
+            trade_exit(
+                self.direction,
+                price,
+                pnl,
+                reason,
+                epoch_to_ist(ts)
+            )
+        )
         self.reset()
 
 

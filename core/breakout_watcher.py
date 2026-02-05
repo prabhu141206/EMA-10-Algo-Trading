@@ -3,6 +3,8 @@ from utils.logger import log_event
 from utils.db_logger import db_logger   
 from core.paper_trade.paper_trade_engine import paper_trade_engine
 from utils.time_utils import epoch_to_ist
+from alerts.telegram_alert import telegram_alert
+from alerts.message_templates import trade_entry
 
 class BreakoutWatcher:
     def check_tick(self, tick: dict):
@@ -58,6 +60,18 @@ class BreakoutWatcher:
             option_entry_price=120,
             delta=0.5,
             ts = ts
+        )
+
+
+        # ---------- SENDING ALERTS ------------
+        telegram_alert.send(
+            trade_entry(
+                direction,
+                price,
+                state_machine.trigger_price,
+                price + 20 if direction == "BUY" else price - 20,
+                epoch_to_ist(ts)
+            )
         )
 
         

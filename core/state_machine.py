@@ -1,5 +1,8 @@
 from utils.logger import log_event
 from utils.db_logger import db_logger
+from alerts.telegram_alert import telegram_alert
+from alerts.message_templates import trigger_armed, trigger_expired
+
 
 class StateMachine:
     def __init__(self):
@@ -54,6 +57,11 @@ class StateMachine:
             ts=trigger_time
         )
 
+        # ---------- SENDING ALERTS ------------
+        telegram_alert.send(
+            trigger_armed(direction, trigger_price, trigger_time)
+        )
+
     def is_trigger_armed(self):
         return self.state == "TRIGGER_ARMED"
 
@@ -81,6 +89,11 @@ class StateMachine:
             candle_time=self.trigger_time,
             note="No breakout in next candle",
             ts=self.trigger_time
+        )
+
+        # ---------- SENDING ALERTS ------------
+        telegram_alert.send(
+            trigger_expired(self.direction, self.trigger_price)
         )
 
         self.reset()
