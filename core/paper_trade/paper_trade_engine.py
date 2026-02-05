@@ -1,9 +1,12 @@
-# core/paper_trade/paper_trade_engine.py
-
 from utils.paper_logger import log_paper_trade
+from utils.db_logger import db_logger
+from utils.time_utils import epoch_to_ist
+from core.state_machine import state_machine
+from utils.logger import log_event
 
 
 class PaperTradeEngine:
+
     def __init__(self):
         self.reset()
 
@@ -18,6 +21,8 @@ class PaperTradeEngine:
         self.sl = None
         self.target = None
 
+        self.trade_id = None   # ✅ IMPORTANT (Lifecycle tracking)
+
     # --------------------------------------------------
     # ENTRY
     # --------------------------------------------------
@@ -26,11 +31,9 @@ class PaperTradeEngine:
         direction: str,
         index_price: float,
         option_entry_price: float = 120.0,
-        delta: float = 0.5
+        delta: float = 0.5,
+        ts: int = None
     ):
-        """
-        Called ONCE when breakout happens
-        """
 
         self.in_trade = True
         self.direction = direction
@@ -39,7 +42,6 @@ class PaperTradeEngine:
         self.option_entry_price = option_entry_price
         self.delta = delta
 
-        # Fixed rules (your choice)
         if direction == "BUY":
             self.sl = option_entry_price - 10
             self.target = option_entry_price + 20
@@ -47,6 +49,7 @@ class PaperTradeEngine:
             self.sl = option_entry_price + 10
             self.target = option_entry_price - 20
 
+        # -------- CSV LOG --------
         log_paper_trade(
             event="ENTRY",
             direction=direction,
@@ -58,19 +61,24 @@ class PaperTradeEngine:
             note=f"Delta={delta}"
         )
 
+        # -------- DB INSERT --------
+        self.trade_id = db_logger.log_paper_trade_entry(
+            entry_time=epoch_to_ist(ts),
+            direction=direction,
+            entry_price=option_entry_price,
+            sl_price=self.sl,
+            target_price=self.target
+        )
+
     # --------------------------------------------------
     # TICK UPDATE
     # --------------------------------------------------
-    def on_index_tick(self, index_ltp: float):
-        """
-        Called on EVERY index tick AFTER entry
-        """
+    def on_index_tick(self, index_ltp: float, ts: int):
 
         if not self.in_trade:
             return
 
         index_move = index_ltp - self.index_entry_price
-
         option_move = index_move * self.delta
 
         if self.direction == "BUY":
@@ -86,21 +94,23 @@ class PaperTradeEngine:
         ) or (
             self.direction == "SELL" and option_price <= self.target
         ):
-            self._exit("TARGET", option_price, pnl)
+            self._exit("TARGET", option_price, pnl, ts)
             return
 
-        # STOP LOSS HIT
+        # STOPLOSS HIT
         if (
             self.direction == "BUY" and option_price <= self.sl
         ) or (
             self.direction == "SELL" and option_price >= self.sl
         ):
-            self._exit("STOPLOSS", option_price, pnl)
+            self._exit("STOPLOSS", option_price, pnl, ts)
 
     # --------------------------------------------------
     # EXIT
     # --------------------------------------------------
-    def _exit(self, reason, price, pnl):
+    def _exit(self, reason, price, pnl, ts):
+
+        # -------- CSV LOG --------
         log_paper_trade(
             event=reason,
             direction=self.direction,
@@ -112,8 +122,36 @@ class PaperTradeEngine:
             note="Delta-based exit"
         )
 
+        # -------- EVENT CSV --------
+        log_event(
+            event_type="EXIT_FIRED",
+            direction=self.direction,
+            price=price,
+            trigger_price=state_machine.trigger_price,
+            candle_time=state_machine.trigger_time,
+            note="Paper trade exit"
+        )
+
+        # -------- DB UPDATE --------
+        db_logger.log_paper_trade_exit(
+            trade_id=self.trade_id,
+            exit_time=epoch_to_ist(ts),
+            exit_price=price,
+            pnl=round(pnl, 2)
+        )
+
+        # -------- EVENT DB --------
+        db_logger.log_trade_event(
+            event_type="EXIT_FIRED",
+            direction=self.direction,
+            price=price,
+            trigger_price=state_machine.trigger_price,
+            candle_time=state_machine.trigger_time,
+            note="Paper trade exit",
+            ts=ts
+        )
+
         self.reset()
 
 
-# SINGLE INSTANCE
 paper_trade_engine = PaperTradeEngine()

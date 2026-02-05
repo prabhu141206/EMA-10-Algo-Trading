@@ -1,5 +1,5 @@
 from utils.logger import log_event
-
+from utils.db_logger import db_logger
 
 class StateMachine:
     def __init__(self):
@@ -34,12 +34,24 @@ class StateMachine:
         self.trigger_price = trigger_price
         self.trigger_time = trigger_time
 
+        # ---------- CSV LOGGER ----------
         log_event(
             event_type="TRIGGER_ARMED",
             direction=direction,
             trigger_price=trigger_price,
             candle_time=trigger_time,
             note="Trigger candle detected"
+        )
+
+        # ---------- DATABASE LOGGER ----------
+        db_logger.log_trade_event(
+            event_type="TRIGGER_ARMED",
+            direction=direction,
+            price=trigger_price,
+            trigger_price=trigger_price,
+            candle_time=trigger_time,
+            note="Trigger candle detected",
+            ts=trigger_time
         )
 
     def is_trigger_armed(self):
@@ -50,6 +62,8 @@ class StateMachine:
         Called ONLY on NEXT candle close
         """
         print("trigger is Expired\n")
+
+        # ---------- CSV LOGGER ----------
         log_event(
             event_type="TRIGGER_EXPIRED",
             direction=self.direction,
@@ -57,6 +71,18 @@ class StateMachine:
             candle_time=self.trigger_time,
             note="No breakout in next candle"
         )
+
+        # ---------- DATABASE LOGGER ----------
+        db_logger.log_trade_event(
+            event_type="TRIGGER_EXPIRED",
+            direction=self.direction,
+            price=self.trigger_price,
+            trigger_price=self.trigger_price,
+            candle_time=self.trigger_time,
+            note="No breakout in next candle",
+            ts=self.trigger_time
+        )
+
         self.reset()
 
     # ================= TRADE =================

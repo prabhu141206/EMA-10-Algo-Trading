@@ -63,7 +63,7 @@ class TickHandler:
         # =================================================
         # 4️⃣ PAPER TRADE ENGINE (PARALLEL)
         # =================================================
-        paper_trade_engine.on_index_tick(price)
+        paper_trade_engine.on_index_tick(price,ts)
 
 
 tick_handler = TickHandler()
