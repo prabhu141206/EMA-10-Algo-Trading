@@ -14,9 +14,10 @@ def onmessage(message):
 
     tick = {
         "price": message["ltp"],
-        "timestamp": message["exch_feed_time"],
+        "timestamp": int(message["exch_feed_time"]/1000),
         "symbol": message["symbol"]
     }
+    print(tick)
     tick_handler.handle_tick(tick)
 
 
