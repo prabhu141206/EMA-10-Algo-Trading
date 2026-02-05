@@ -70,7 +70,7 @@ class CandleBuilder:
 
             # 🔑 ACTIVATE SYSTEM EXACTLY ONCE
             if not self.system_activated:
-                human_time = datetime.datetime.fromtimestamp(bucket)
+                human_time = epoch_to_ist(bucket)
                 print(f"[CANDLE] First valid candle started at {human_time} \n")
 
                 state_machine.activate_system()
