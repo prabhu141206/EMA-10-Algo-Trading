@@ -24,21 +24,9 @@ def onmessage(message):
     if "ltp" not in message:
         return
 
-    if "exch_feed_time" not in message:
-        return
-
-    if not message["exch_feed_time"]:
-        return
-
-    ts = int(message["exch_feed_time"] / 1000)
-
-    # Reject invalid timestamps
-    if ts < 1600000000:   # anything before 2020 → junk
-        return
-
     tick = {
         "price": message["ltp"],
-        "timestamp": ts,
+        "timestamp": message["exch_feed_time"],
         "symbol": message["symbol"]
     }
 

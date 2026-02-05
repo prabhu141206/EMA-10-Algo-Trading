@@ -3,3 +3,4 @@ websocket-client
 python-dateutil
 fyers-apiv3
 python-dotenv
+pytz

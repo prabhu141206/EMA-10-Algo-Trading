@@ -3,8 +3,8 @@ from core.signal_engine import signal_engine
 from core.state_machine import state_machine
 from core.breakout_watcher import breakout_watcher
 from core.paper_trade.paper_trade_engine import paper_trade_engine
-from utils.time_utils import is_market_open, is_entry_allowed
-from datetime import datetime, timedelta
+from utils.time_utils import is_market_open, is_entry_allowed, epoch_to_ist
+from datetime import timedelta
 
 
 class TickHandler:
@@ -24,14 +24,15 @@ class TickHandler:
         # =================================================
         if candle_closed:
 
-            # 🔴 If trigger was armed → expire it NOW
+            # 🔴 Expire previous trigger if exists
             if state_machine.is_trigger_armed():
                 state_machine.expire_trigger()
 
             # 🔵 Evaluate new candle for trigger
             signal_engine.on_candle_close(closed_candle)
 
-            start = datetime.fromtimestamp(closed_candle["timestamp"])
+            # ✅ TIMEZONE SAFE PRINTING
+            start = epoch_to_ist(closed_candle["timestamp"])
             end = start + timedelta(minutes=5)
 
             print(
@@ -51,10 +52,10 @@ class TickHandler:
             else:
                 print("[INFO] ❌ No valid setup on this candle")
 
-            return  # ⛔ nothing else on candle-close
+            return  # ⛔ nothing else on candle-close tick
 
         # =================================================
-        # 3️⃣ TICK-BY-TICK BREAKOUT (ONLY THIS)
+        # 3️⃣ TICK-BY-TICK BREAKOUT
         # =================================================
         if state_machine.is_trigger_armed() and is_entry_allowed(ts):
             breakout_watcher.check_tick(tick)
