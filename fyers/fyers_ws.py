@@ -43,7 +43,6 @@ def onmessage(message):
         "symbol": message["symbol"]
     }
 
-    print("Tick forwarded:", tick)
 
     tick_handler.handle_tick(tick)
 
