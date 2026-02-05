@@ -28,6 +28,9 @@ class CandleBuilder:
 
         price = tick["price"]
         ts = tick["timestamp"]
+        
+        if ts < 1600000000 :
+            return False, None
 
         bucket = self._get_bucket_start(ts)
 

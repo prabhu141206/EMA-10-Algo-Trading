@@ -20,32 +20,29 @@ WS_TOKEN = f"{CLIENT_ID}:{ACCESS_TOKEN}"
 # ================= CALLBACKS =================
 
 def onmessage(message):
-    """
-    Called whenever new tick arrives
-    """
 
-    # Ignore packets without price
     if "ltp" not in message:
         return
 
-    exch_time = message.get("exch_feed_time")
-
-    # ----- SAFETY CHECK -----
-    if not exch_time or exch_time <= 0:
+    if "exch_feed_time" not in message:
         return
 
-    # Convert milliseconds → seconds
-    timestamp = int(exch_time / 1000)
+    if not message["exch_feed_time"]:
+        return
+
+    ts = int(message["exch_feed_time"] / 1000)
+
+    # Reject invalid timestamps
+    if ts < 1600000000:   # anything before 2020 → junk
+        return
 
     tick = {
         "price": message["ltp"],
-        "timestamp": timestamp,
+        "timestamp": ts,
         "symbol": message["symbol"]
     }
 
-
     tick_handler.handle_tick(tick)
-
 
 def onerror(message):
     print("❌ Socket Error:", message)
