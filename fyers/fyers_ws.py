@@ -1,7 +1,11 @@
 from fyers_apiv3.FyersWebsocket import data_ws
 from core.tick_handler import tick_handler
+from dotenv import load_dotenv
+import os
 import warnings
 warnings.filterwarnings("ignore")
+load_dotenv()
+
 
 # ----- CALLBACKS -----
 def onmessage(message):
@@ -33,8 +37,8 @@ def onopen():
 
 
 # ----- AUTH -----
-client_id = "RFX****G77-100"
-access_token = "eweqwvffsf*******qeqadsd"
+client_id = os.getenv("CLIENT_ID")
+access_token = os.getenv("ACCESS_TOKEN")
 
 ws_token = f"{client_id}:{access_token}"
 
