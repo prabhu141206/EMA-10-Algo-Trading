@@ -3,49 +3,79 @@ from core.tick_handler import tick_handler
 from dotenv import load_dotenv
 import os
 import warnings
+
 warnings.filterwarnings("ignore")
+
+# ================= LOAD ENV =================
 load_dotenv()
 
+CLIENT_ID = os.getenv("CLIENT_ID")
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
-# ----- CALLBACKS -----
+if not CLIENT_ID or not ACCESS_TOKEN:
+    raise Exception("❌ CLIENT_ID or ACCESS_TOKEN missing from environment")
+
+WS_TOKEN = f"{CLIENT_ID}:{ACCESS_TOKEN}"
+
+# ================= CALLBACKS =================
+
 def onmessage(message):
+    """
+    Called whenever new tick arrives
+    """
+
+    # Ignore packets without price
     if "ltp" not in message:
         return
 
+    exch_time = message.get("exch_feed_time")
+
+    # ----- SAFETY CHECK -----
+    if not exch_time or exch_time <= 0:
+        return
+
+    # Convert milliseconds → seconds
+    timestamp = int(exch_time / 1000)
+
     tick = {
         "price": message["ltp"],
-        "timestamp": int(message["exch_feed_time"]/1000),
+        "timestamp": timestamp,
         "symbol": message["symbol"]
     }
-    print(tick)
+
+    print("Tick forwarded:", tick)
+
     tick_handler.handle_tick(tick)
 
 
 def onerror(message):
-    print("Error:", message)
+    print("❌ Socket Error:", message)
 
 
 def onclose(message):
-    print("Connection closed:", message)
+    print("🔴 Connection Closed:", message)
 
 
 def onopen():
-    data_type = "SymbolUpdate"
+    """
+    Runs when websocket connects
+    """
+
+    print("✅ FYERS Websocket Connected")
+
     symbols = ["NSE:NIFTY50-INDEX"]
+    data_type = "SymbolUpdate"
 
     fyers.subscribe(symbols=symbols, data_type=data_type)
     fyers.keep_running()
 
+    print("📡 Subscribed to:", symbols)
 
-# ----- AUTH -----
-client_id = os.getenv("CLIENT_ID")
-access_token = os.getenv("ACCESS_TOKEN")
 
-ws_token = f"{client_id}:{access_token}"
+# ================= CREATE SOCKET =================
 
-# ----- CREATE SOCKET -----
 fyers = data_ws.FyersDataSocket(
-    access_token=ws_token,
+    access_token=WS_TOKEN,
     log_path="",
     litemode=False,
     write_to_file=False,
@@ -56,6 +86,14 @@ fyers = data_ws.FyersDataSocket(
     on_message=onmessage
 )
 
-# ----- CONNECT -----
+
+# ================= START SOCKET =================
+
 def start():
+    print("===================================")
+    print("🚀 Starting EMA Trend Algo")
+    print("🔐 CLIENT ID:", CLIENT_ID)
+    print("🔑 TOKEN LENGTH:", len(ACCESS_TOKEN))
+    print("===================================")
+
     fyers.connect()
