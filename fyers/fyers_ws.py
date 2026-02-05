@@ -3,24 +3,12 @@ from core.tick_handler import tick_handler
 from dotenv import load_dotenv
 import os
 import warnings
-
 warnings.filterwarnings("ignore")
-
-# ================= LOAD ENV =================
 load_dotenv()
 
-CLIENT_ID = os.getenv("CLIENT_ID")
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
-if not CLIENT_ID or not ACCESS_TOKEN:
-    raise Exception("❌ CLIENT_ID or ACCESS_TOKEN missing from environment")
-
-WS_TOKEN = f"{CLIENT_ID}:{ACCESS_TOKEN}"
-
-# ================= CALLBACKS =================
-
+# ----- CALLBACKS -----
 def onmessage(message):
-
     if "ltp" not in message:
         return
 
@@ -29,37 +17,34 @@ def onmessage(message):
         "timestamp": message["exch_feed_time"],
         "symbol": message["symbol"]
     }
-
     tick_handler.handle_tick(tick)
 
+
 def onerror(message):
-    print("❌ Socket Error:", message)
+    print("Error:", message)
 
 
 def onclose(message):
-    print("🔴 Connection Closed:", message)
+    print("Connection closed:", message)
 
 
 def onopen():
-    """
-    Runs when websocket connects
-    """
-
-    print("✅ FYERS Websocket Connected")
-
-    symbols = ["NSE:NIFTY50-INDEX"]
     data_type = "SymbolUpdate"
+    symbols = ["NSE:NIFTY50-INDEX"]
 
     fyers.subscribe(symbols=symbols, data_type=data_type)
     fyers.keep_running()
 
-    print("📡 Subscribed to:", symbols)
 
+# ----- AUTH -----
+client_id = os.getenv("CLIENT_ID")
+access_token = os.getenv("ACCESS_TOKEN")
 
-# ================= CREATE SOCKET =================
+ws_token = f"{client_id}:{access_token}"
 
+# ----- CREATE SOCKET -----
 fyers = data_ws.FyersDataSocket(
-    access_token=WS_TOKEN,
+    access_token=ws_token,
     log_path="",
     litemode=False,
     write_to_file=False,
@@ -70,14 +55,6 @@ fyers = data_ws.FyersDataSocket(
     on_message=onmessage
 )
 
-
-# ================= START SOCKET =================
-
+# ----- CONNECT -----
 def start():
-    print("===================================")
-    print("🚀 Starting EMA Trend Algo")
-    print("🔐 CLIENT ID:", CLIENT_ID)
-    print("🔑 TOKEN LENGTH:", len(ACCESS_TOKEN))
-    print("===================================")
-
     fyers.connect()
