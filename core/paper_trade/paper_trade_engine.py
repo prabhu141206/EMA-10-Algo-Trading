@@ -1,5 +1,5 @@
 from utils.paper_logger import log_paper_trade
-from utils.db_logger import db_logger
+from db.logger import db_logger
 from utils.time_utils import epoch_to_ist
 from core.state_machine import state_machine
 from utils.logger import log_event

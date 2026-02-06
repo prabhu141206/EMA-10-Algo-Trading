@@ -14,6 +14,9 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
 from fyers.fyers_ws import start
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import system_start
+import threading
+from db.worker import start_db_worker
+
 
 
     
@@ -25,6 +28,9 @@ def main():
 
     # ⭐ SEND TELEGRAM ALERT HERE
     telegram_alert.send(system_start())
+
+    # DB connection is started
+    threading.Thread(target=start_db_worker, daemon=True).start()
 
     # Start FYERS WebSocket
     start()

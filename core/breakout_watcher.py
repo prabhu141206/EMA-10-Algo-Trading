@@ -1,6 +1,6 @@
 from core.state_machine import state_machine
 from utils.logger import log_event
-from utils.db_logger import db_logger   
+from db.logger import db_logger   
 from core.paper_trade.paper_trade_engine import paper_trade_engine
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert

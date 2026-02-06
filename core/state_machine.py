@@ -1,5 +1,5 @@
 from utils.logger import log_event
-from utils.db_logger import db_logger
+from db.logger import db_logger
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trigger_armed, trigger_expired
 
