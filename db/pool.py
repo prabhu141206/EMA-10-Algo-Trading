@@ -2,7 +2,7 @@
 
     Purpose: reuse connections instead of creating new ones every time.
     Why it matters: Opening a DB connection per insert is slow and dangerous under load.
-    
+
     Pool does:
         Create 3–10 persistent connections
         Give connection when needed
@@ -13,14 +13,14 @@
 
 
 
-
+import os 
 from psycopg2.pool import SimpleConnectionPool
 from db.connection import create_connection
 
 pool = SimpleConnectionPool(
     1,
     5,
-    dsn=create_connection().dsn
+    dsn=os.getenv("DATABASE_URL")
 )
 
 def get_conn():
