@@ -1,6 +1,6 @@
 from utils.db import get_connection
 from datetime import datetime
-from time_utils import epoch_to_ist
+from utils.time_utils import epoch_to_ist
 
 class DBLogger:
 
