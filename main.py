@@ -16,13 +16,14 @@ from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import system_start
 import threading
 from db.worker import start_db_worker
-
+from db.init_tables import init_tables
 
 
     
 
 
 def main():
+    init_tables()
     print("Starting EMA Trend Algo...")
     print("Waiting for ticks from FYERS...\n")
 
