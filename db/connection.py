@@ -7,6 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def create_connection():
+    return psycopg2.connect(
+        os.getenv("DATABASE_URL")
+    )
+
+
+'''
+
+        use for local system 
 def create_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -15,3 +25,4 @@ def create_connection():
         password=os.getenv("DB_PASS"),
         port=os.getenv("DB_PORT")
     )
+ '''
