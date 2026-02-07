@@ -15,6 +15,24 @@ def system_start():
         "🟢 System Ready"
     )
 
+def option_entry_alert(symbol, trend, instrument, 
+entry_price, capital, target, sl, time):
+
+    return f"""
+            🚀 OPTION TRADE ENTRY
+
+            Instrument : {symbol}
+            Signal     : {trend}
+            Action     : {instrument}
+
+            Entry Price: ₹{entry_price:.2f}
+            Capital Req: ₹{capital:.2f}
+
+            Target     : ₹{target:.2f}
+            Stoploss   : ₹{sl:.2f}
+
+            Time       : {time}
+        """
 
 def system_stop():
     return (

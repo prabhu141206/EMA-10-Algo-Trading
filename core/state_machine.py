@@ -69,6 +69,10 @@ class StateMachine:
         """
         Called ONLY on NEXT candle close
         """
+
+        if self.state != "TRIGGER_ARMED" :
+            return
+        
         print("trigger is Expired\n")
 
         # ---------- CSV LOGGER ----------

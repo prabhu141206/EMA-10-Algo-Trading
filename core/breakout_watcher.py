@@ -1,10 +1,17 @@
 from core.state_machine import state_machine
 from utils.logger import log_event
 from db.logger import db_logger   
-from core.paper_trade.paper_trade_engine import paper_trade_engine
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trade_entry
+from trade_engine.virtual_trade_engine import VirtualTradeEngine
+from trade_engine.option_ws import OptionWebSocket
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+engine = VirtualTradeEngine()
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
 class BreakoutWatcher:
     def check_tick(self, tick: dict):
@@ -22,7 +29,11 @@ class BreakoutWatcher:
             self._fire_entry(direction, price, tick["timestamp"])
 
     def _fire_entry(self, direction, price, ts):
-
+        
+        # HARD BLOCK: prevent multiple entries
+        if state_machine.is_in_trade():
+            return
+        
         print(
             f"[ENTRY] 🚀 {direction} breakout at "
             f"{epoch_to_ist(ts)} | price={price}"
@@ -54,13 +65,25 @@ class BreakoutWatcher:
         )
 
         #  START PAPER TRADE
-        paper_trade_engine.enter_trade(
-            direction=direction,
-            index_price=price,
-            option_entry_price=120,
-            delta=0.5,
-            ts = ts
+        engine.on_trigger(
+                direction=direction,
+                spot_price=price,
+                candle_time=ts
         )
+
+        # build option symbol
+        option_symbol = engine.symbol
+
+        option_ws = OptionWebSocket(
+                    access_token=ACCESS_TOKEN,
+                    symbol=option_symbol,
+                    engine=engine
+                )
+
+        engine.attach_ws(option_ws)
+        option_ws.connect()
+
+       
 
 
         # ---------- SENDING ALERTS ------------

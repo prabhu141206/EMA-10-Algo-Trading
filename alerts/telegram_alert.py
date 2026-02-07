@@ -51,6 +51,9 @@ class TelegramAlertEngine:
             loop = asyncio.get_event_loop()
             loop.create_task(self._send_async(message))
 
+        except Exception as e:
+            print("Telegram error: ", e)
+
 
 # ⭐ GLOBAL INSTANCE
 telegram_alert = TelegramAlertEngine()

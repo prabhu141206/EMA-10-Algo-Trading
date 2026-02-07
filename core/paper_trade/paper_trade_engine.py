@@ -35,8 +35,11 @@ class PaperTradeEngine:
         option_entry_price: float = 120.0,
         delta: float = 0.5,
         ts: int = None
-    ):
-
+    ):  
+        
+        if self.in_trade:
+            return
+        
         self.in_trade = True
         self.direction = direction
 
