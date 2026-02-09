@@ -6,3 +6,4 @@ python-dotenv
 pytz
 psycopg2-binary
 python-telegram-bot
+protobuf
