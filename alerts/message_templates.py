@@ -193,3 +193,19 @@ def daily_summary(total_trades, wins, losses, total_pnl):
         f"❌ Losses : `{losses}`\n"
         f"💰 Net PnL : `{round(total_pnl, 2)}`"
     )
+
+
+def option_exit_alert(symbol, trend, instrument, exit_price, pnl, reason, time):
+    return f"""
+        🚪 OPTION TRADE EXIT
+        
+        📊 Symbol: {symbol}
+        📈 Trend: {trend}
+        🎯 Instrument: {instrument}
+        
+        💰 Exit Price: {exit_price}
+        📊 PnL: {round(pnl,2)}
+        
+        📌 Reason: {reason}
+        ⏰ Time: {time}
+        """
