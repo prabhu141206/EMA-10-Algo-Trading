@@ -2,15 +2,11 @@
 
 
 import psycopg2
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
+from config.settings import DATABASE_URL
 
 def create_connection():
     return psycopg2.connect(
-        os.getenv("DATABASE_URL")
+        DATABASE_URL
     )
 
 

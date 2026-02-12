@@ -1,10 +1,9 @@
 from fyers_apiv3.FyersWebsocket import data_ws
 from core.tick_handler import tick_handler
-from dotenv import load_dotenv
-import os
+from config.settings import CLIENT_ID, ACCESS_TOKEN
 import warnings
 warnings.filterwarnings("ignore")
-load_dotenv()
+
 
 
 # ----- CALLBACKS -----
@@ -36,11 +35,8 @@ def onopen():
     fyers.keep_running()
 
 
-# ----- AUTH -----
-client_id = os.getenv("CLIENT_ID")
-access_token = os.getenv("ACCESS_TOKEN")
 
-ws_token = f"{client_id}:{access_token}"
+ws_token = f"{CLIENT_ID}:{ACCESS_TOKEN}"
 
 # ----- CREATE SOCKET -----
 fyers = data_ws.FyersDataSocket(

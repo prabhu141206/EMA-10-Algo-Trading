@@ -1,60 +1,36 @@
-import os
-import asyncio
-from dotenv import load_dotenv
-from telegram import Bot
-
-load_dotenv()
+import requests
+from config.settings import TELEGRAM_CHAT_ID, TELEGRAM_TOKEN
 
 
 class TelegramAlertEngine:
 
-    def __init__(self):
-        self.token = os.getenv("TELEGRAM_TOKEN")
-        self.chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    def send(self, message):  
 
-        if not self.token or not self.chat_id:
-            print("[TELEGRAM] ❌ Missing token or chat id")
-            self.bot = None
-        else:
-            self.bot = Bot(token=self.token)
+        if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:  
+            print("[TELEGRAM] Missing credentials")  
+            return  
 
-    # ----------------------------------------
-    # INTERNAL ASYNC SENDER
-    # ----------------------------------------
-    async def _send_async(self, message: str):
+        try:  
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"  
 
-        if not self.bot:
-            return
+            data = {  
+                "chat_id": TELEGRAM_CHAT_ID,  
+                "text": message,  
+                "parse_mode": "HTML"  
+            }  
+            
+            try :
 
-        try:
-            await self.bot.send_message(
-                chat_id=self.chat_id,
-                text=message
-            )
+                r = requests.post(url, data=data, timeout=5)  
+                if r.status_code != 200:
+                    print("[TELEGRAM FAILED]", r.text)
+                    
+            except Exception as e :
+                print("[TELEGRAM ERROR]", e)
 
-        except Exception as e:
-            print(f"[TELEGRAM ERROR] {e}")
+        except Exception as e:  
+            print("[TELEGRAM ERROR]", e)
 
-    # ----------------------------------------
-    # PUBLIC SEND METHOD
-    # ----------------------------------------
-    def send(self, message: str):
-        """
-        Non-blocking Telegram sender
-        Safe for trading loop
-        """
-
-        try:
-            asyncio.run(self._send_async(message))
-        except RuntimeError:
-            # If event loop already running
-            loop = asyncio.get_event_loop()
-            loop.create_task(self._send_async(message))
-
-        except Exception as e:
-            print("Telegram error: ", e)
-
-
-# ⭐ GLOBAL INSTANCE
 telegram_alert = TelegramAlertEngine()
+
 

@@ -6,12 +6,10 @@ from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trade_entry
 from trade_engine.virtual_trade_engine import VirtualTradeEngine
 from trade_engine.option_ws import OptionWebSocket
-import os
-from dotenv import load_dotenv
+from config.settings import ACCESS_TOKEN
 
-load_dotenv()
 engine = VirtualTradeEngine()
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+
 
 class BreakoutWatcher:
     def check_tick(self, tick: dict):
@@ -87,6 +85,7 @@ class BreakoutWatcher:
 
 
         # ---------- SENDING ALERTS ------------
+        
         telegram_alert.send(
             trade_entry(
                 direction,
