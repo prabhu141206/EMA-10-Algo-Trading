@@ -9,6 +9,7 @@ from core.candle_builder import candle_builder  # noqa: F401
 from core.signal_engine import signal_engine  # noqa: F401
 from core.state_machine import state_machine  # noqa: F401
 from core.breakout_watcher import breakout_watcher  # noqa: F401
+from config import settings
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
 from fyers.fyers_ws import start
