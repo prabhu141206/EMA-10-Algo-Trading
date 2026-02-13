@@ -2,7 +2,6 @@ from core.candle_builder import candle_builder
 from core.signal_engine import signal_engine
 from core.state_machine import state_machine
 from core.breakout_watcher import breakout_watcher
-from core.paper_trade.paper_trade_engine import paper_trade_engine
 from utils.time_utils import is_market_open, is_entry_allowed, epoch_to_ist
 from datetime import timedelta
 
@@ -60,10 +59,6 @@ class TickHandler:
         if state_machine.is_trigger_armed() and is_entry_allowed(ts):
             breakout_watcher.check_tick(tick)
 
-        # =================================================
-        # 4️⃣ PAPER TRADE ENGINE (PARALLEL)
-        # =================================================
-        paper_trade_engine.on_index_tick(price,ts)
 
 
 tick_handler = TickHandler()

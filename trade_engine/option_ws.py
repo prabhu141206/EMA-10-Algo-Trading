@@ -40,12 +40,12 @@ class OptionWebSocket:
     # 🔥 IMPORTANT PART
     def on_depth_update(self, ticker, message):
 
-        price = (message.bidprice[0] + message.askprice[0]) / 2
+        ltp_price = (message.bidprice[0] + message.askprice[0]) / 2
         bid = message.bidprice[0]
         ask = message.askprice[0]
         ts = message.timestamp
 
-        self.engine.on_option_tick(price, bid, ask, ts)
+        self.engine.on_option_tick(ltp_price, bid, ask, ts)
 
     def onerror(self, msg):
         print("WS Error:", msg)

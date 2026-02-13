@@ -36,6 +36,25 @@ class VirtualTradeEngine(BaseEngine):
     def attach_ws(self, ws):
         self.ws = ws
 
+    def get_exit_description(self, reason, pnl):
+        """
+        Builds human readable exit message context
+        """
+
+        trend, instrument = self.get_trade_description(self.direction)
+
+        if reason == "TARGET":
+            result = "Target Hit 🎯"
+        else:
+            result = "Stop Loss Hit 🛑"
+
+        if pnl >= 0:
+            outcome = "Profit Booked"
+        else:
+            outcome = "Loss Booked"
+
+        return trend, instrument, result, outcome
+
     def get_trade_description(self, direction):
         """
         Converts engine direction → human language
@@ -188,7 +207,7 @@ class VirtualTradeEngine(BaseEngine):
         print("EXIT:", reason, price)
 
         # ===== TELEGRAM EXIT ALERT =====
-        trend, instrument = self.get_trade_description(self.direction)
+        trend, instrument = self.get_exit_description(self.direction)
         readable_symbol = format_symbol(self.symbol)
 
         telegram_alert.send(
