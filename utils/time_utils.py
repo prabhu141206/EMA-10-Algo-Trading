@@ -69,7 +69,9 @@ def is_5min_boundary(ts: int) -> bool:
 
 def wait_until_market_open():
     while True:
-        if is_market_open():
+         
+        now_epoch = int(time.time())
+        if is_market_open(now_epoch):
             print("[SCHEDULER] Market open. Starting system.")
             return
         time.sleep(30)
