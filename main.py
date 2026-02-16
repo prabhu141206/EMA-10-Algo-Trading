@@ -18,7 +18,7 @@ from alerts.message_templates import system_start
 import threading
 from db.worker import start_db_worker
 from db.init_tables import init_tables
-
+from utils.time_utils import wait_until_market_open
 
     
 
@@ -34,6 +34,7 @@ def main():
     # DB connection is started
     threading.Thread(target=start_db_worker, daemon=True).start()
 
+    wait_until_market_open()
     # Start FYERS WebSocket
     start()
 

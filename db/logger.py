@@ -2,82 +2,54 @@ from db.queue import db_queue
 from utils.time_utils import epoch_to_ist
 
 
-#_________________This becomes the single entry point for database logging._________________________________
-
 class DBLogger:
 
-    def log_trade_event(self, event_type, direction,
-                        price, trigger_price,
-                        candle_time, note, ts):
-
+    # ==============================
+    # ENTRY LOG
+    # ==============================
+    def log_paper_trade_entry(
+        self,
+        symbol,
+        direction,
+        index_price,
+        entry_price,
+        entry_time,
+        sl_price,
+        target_price,
+        lot_size,
+        capital_used,
+        strategy_name
+    ):
         try:
             query = """
-            INSERT INTO trade_events
-            (timestamp, event_type, direction, price,
-            trigger_price, candle_time, note)
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
-            """
-
-            values = (
-                epoch_to_ist(ts),
-                event_type,
+            INSERT INTO trades
+            (
+                symbol,
+                strategy_name,
                 direction,
-                price,
-                trigger_price,
-                candle_time,
-                note
-            )
-
-            db_queue.put({
-                "query": query,
-                "values": values
-            })
-
-        except Exception as e:
-            print("DB ERROR (trade_events): ",e)
-    
-
-
-    def log_paper_trade_entry(self, entry_time, direction,
-                         entry_price, sl_price, target_price):
-
-        try:
-            query = """
-            INSERT INTO paper_trades
-            (entry_time, direction, entry_price, sl_price, target_price)
-            VALUES (%s,%s,%s,%s,%s)
-            """
-
-            values = (
-                entry_time,
-                direction,
+                index_price,
                 entry_price,
+                entry_time,
                 sl_price,
-                target_price
+                target_price,
+                lot_size,
+                capital_used,
+                strategy_name
             )
-
-            db_queue.put({
-                "query": query,
-                "values": values
-            })
-
-        except Exception as e:
-            print("DB ERROR (paper_trades): ",e)
-
-
-    def log_paper_trade_exit(self, exit_time, exit_price, pnl):
-
-        try:
-            query = """
-            UPDATE paper_trades
-            SET exit_time=%s, exit_price=%s, pnl=%s
-            WHERE exit_time IS NULL
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
 
             values = (
-                exit_time,
-                exit_price,
-                pnl
+                symbol,
+                direction,
+                index_price,
+                entry_price,
+                entry_time,
+                sl_price,
+                target_price,
+                lot_size,
+                capital_used,
+                strategy_name
             )
 
             db_queue.put({
@@ -86,7 +58,46 @@ class DBLogger:
             })
 
         except Exception as e:
-            print("DB ERROR (paper_trades): ",e)
+            print("DB ERROR (ENTRY):", e)
+
+    # ==============================
+    # EXIT LOG
+    # ==============================
+    def log_paper_trade_exit(
+        self,
+        symbol,
+        exit_price,
+        exit_time,
+        pnl,
+        exit_reason
+    ):
+        try:
+            query = """
+            UPDATE trades
+            SET
+                exit_price=%s,
+                exit_time=%s,
+                pnl=%s,
+                exit_reason=%s
+            WHERE symbol=%s
+            AND exit_time IS NULL
+            """
+
+            values = (
+                exit_price,
+                exit_time,
+                pnl,
+                exit_reason,
+                symbol
+            )
+
+            db_queue.put({
+                "query": query,
+                "values": values
+            })
+
+        except Exception as e:
+            print("DB ERROR (EXIT):", e)
 
 
 db_logger = DBLogger()

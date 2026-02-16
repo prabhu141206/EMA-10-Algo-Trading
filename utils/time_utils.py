@@ -65,3 +65,11 @@ def next_5min_boundary(ts: int) -> int:
 
 def is_5min_boundary(ts: int) -> bool:
     return ts % FIVE_MIN == 0
+
+
+def wait_until_market_open():
+    while True:
+        if is_market_open():
+            print("[SCHEDULER] Market open. Starting system.")
+            return
+        time.sleep(30)

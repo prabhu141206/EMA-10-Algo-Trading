@@ -5,31 +5,33 @@ def init_tables():
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS trade_events (
-        id SERIAL PRIMARY KEY,
-        timestamp TIMESTAMP,
-        event_type VARCHAR(50),
-        direction VARCHAR(10),
-        price FLOAT,
-        trigger_price FLOAT,
-        candle_time BIGINT,
-        note TEXT
-    );
+        CREATE TABLE IF NOT EXISTS trades (
+            id SERIAL PRIMARY KEY,
+
+            symbol TEXT,
+            strategy_name TEXT,
+
+            direction TEXT,
+            index_price REAL,
+
+            entry_price REAL,
+            entry_time TIMESTAMP,
+
+            sl_price REAL,
+            target_price REAL,
+
+            exit_price REAL,
+            exit_time TIMESTAMP,
+            exit_reason TEXT,
+
+            pnl REAL,
+
+            lot_size INTEGER,
+            capital_used REAL
+        );
     """)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS paper_trades (
-        id SERIAL PRIMARY KEY,
-        entry_time TIMESTAMP,
-        direction VARCHAR(10),
-        entry_price FLOAT,
-        sl_price FLOAT,
-        target_price FLOAT,
-        exit_time TIMESTAMP,
-        exit_price FLOAT,
-        pnl FLOAT
-    );
-    """)
+    
 
     conn.commit()
     cursor.close()

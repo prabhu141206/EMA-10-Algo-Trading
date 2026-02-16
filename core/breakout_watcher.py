@@ -1,5 +1,4 @@
 from core.state_machine import state_machine
-from utils.logger import log_event
 from db.logger import db_logger   
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert
@@ -37,30 +36,6 @@ class BreakoutWatcher:
             f"{epoch_to_ist(ts)} | price={price}"
         )
 
-        #  CSV STRATEGY EVENT LOG
-        # ==================================================
-        log_event(
-            event_type="ENTRY_FIRED",
-            direction=direction,
-            price=price,
-            trigger_price=state_machine.trigger_price,
-            candle_time=state_machine.trigger_time,
-            note="Breakout confirmed"
-        )
-
-       
-        #  DATABASE STRATEGY EVENT LOG
-        # ==================================================
-
-        db_logger.log_trade_event(
-            event_type="ENTRY_FIRED",
-            direction=direction,
-            price=price,
-            trigger_price=state_machine.trigger_price,
-            candle_time=state_machine.trigger_time,
-            note="Breakout confirmed",
-            ts=ts
-        )
 
         #  START PAPER TRADE
         engine.on_trigger(

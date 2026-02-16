@@ -1,10 +1,7 @@
 from trade_engine.base_engine import BaseEngine
 from options.symbol_builder import build_option_symbol
 from options.symbol_formatter import format_symbol
-
-from utils.paper_logger import log_paper_trade
 from db.logger import db_logger
-from utils.logger import log_event
 from utils.time_utils import epoch_to_ist
 
 from alerts.telegram_alert import telegram_alert
@@ -22,8 +19,11 @@ class VirtualTradeEngine(BaseEngine):
         self.sl = None
         self.entry_time = None
         self.ws = None
+        self.index_price = None
+        self.capital_used = None
+        self.lot_size = 65      #Nifty 50 lot size
 
-    # =========RESET LOGIC================
+    # ========= RESET LOGIC =================
     def reset(self):
         self.trade_active = False
         self.direction = None
@@ -32,15 +32,23 @@ class VirtualTradeEngine(BaseEngine):
         self.target = None
         self.sl = None
         self.entry_time = None
-    
+        self.index_price = None
+        self.capital_used = None
+
     def attach_ws(self, ws):
         self.ws = ws
 
-    def get_exit_description(self, reason, pnl):
-        """
-        Builds human readable exit message context
-        """
+    # ========= DESCRIPTION HELPERS =================
+    def get_trade_description(self, direction):
+        if direction == "BUY":
+            trend = "Upside Breakout"
+            instrument = "Buy Call Option"
+        else:
+            trend = "Downside Breakout"
+            instrument = "Buy Put Option"
+        return trend, instrument
 
+    def get_exit_description(self, reason, pnl):
         trend, instrument = self.get_trade_description(self.direction)
 
         if reason == "TARGET":
@@ -55,19 +63,6 @@ class VirtualTradeEngine(BaseEngine):
 
         return trend, instrument, result, outcome
 
-    def get_trade_description(self, direction):
-        """
-        Converts engine direction → human language
-        """
-        if direction == "BUY":
-            trend = "Upside Breakout"
-            instrument = "Buy Call Option"
-        else:
-            trend = "Downside Breakout"
-            instrument = "Buy Put Option"
-
-        return trend, instrument
-    
     # =========================
     # TRIGGER COMES FROM STRATEGY
     # =========================
@@ -77,21 +72,17 @@ class VirtualTradeEngine(BaseEngine):
             return
 
         self.direction = direction
+        self.index_price = spot_price
 
-        # build CE/PE symbol
+        # FIXED: correct param name
         self.symbol = build_option_symbol(
-            spot_price=spot_price,
+            index_price=spot_price,
             direction=direction
         )
 
         self.entry_time = candle_time
 
-        log_event(
-            event_type="OPTION_SYMBOL_SELECTED",
-            direction=direction,
-            price=spot_price,
-            note=self.symbol
-        )
+        
 
         print("Selected Symbol:", self.symbol)
 
@@ -108,34 +99,27 @@ class VirtualTradeEngine(BaseEngine):
             self.entry_price = price
             self.trade_active = True
 
+            self.capital_used = price * self.lot_size
             self.target = price + 20
             self.sl = price - 10
 
             entry_time = epoch_to_ist(ts)
 
-            # ===== DB LOG =====
+            # ===== DB ENTRY LOG (FIXED FOR NEW TABLE STRUCTURE) =====
             db_logger.log_paper_trade_entry(
                 symbol=self.symbol,
                 direction=self.direction,
+                index_price=self.index_price,
                 entry_price=price,
-                entry_time=entry_time
+                entry_time=entry_time,
+                sl_price=self.sl,
+                target_price=self.target,
+                lot_size=self.lot_size,
+                capital_used=self.capital_used,
+                strategy_name="EMA10_BREAKOUT"
             )
 
-            # ===== PAPER LOG =====
-            log_paper_trade(
-                symbol=self.symbol,
-                direction=self.direction,
-                price=price,
-                time=entry_time
-            )
 
-            # ===== EVENT =====
-            log_event(
-                event_type="OPTION_ENTRY",
-                direction=self.direction,
-                price=price,
-                note=f"{self.symbol}"
-            )
 
             print("ENTRY @", price)
 
@@ -180,34 +164,23 @@ class VirtualTradeEngine(BaseEngine):
         else:
             pnl = self.entry_price - price
 
-        # ===== DB =====
+        # ===== DB EXIT LOG (FIXED) =====
         db_logger.log_paper_trade_exit(
             symbol=self.symbol,
             exit_price=price,
             exit_time=exit_time,
-            pnl=pnl
+            pnl=pnl,
+            exit_reason=reason
         )
 
-        # ===== PAPER LOG =====
-        log_paper_trade(
-            symbol=self.symbol,
-            exit_price=price,
-            time=exit_time,
-            pnl=pnl
-        )
+       
 
-        # ===== EVENT =====
-        log_event(
-            event_type="OPTION_EXIT",
-            direction=self.direction,
-            price=price,
-            note=f"{reason} | {self.symbol}"
-        )
+        
 
         print("EXIT:", reason, price)
 
-        # ===== TELEGRAM EXIT ALERT =====
-        trend, instrument = self.get_exit_description(self.direction)
+        # ===== TELEGRAM EXIT ALERT (FIXED) =====
+        trend, instrument, result, outcome = self.get_exit_description(reason, pnl)
         readable_symbol = format_symbol(self.symbol)
 
         telegram_alert.send(
@@ -216,8 +189,9 @@ class VirtualTradeEngine(BaseEngine):
                 trend=trend,
                 instrument=instrument,
                 exit_price=price,
-                pnl=pnl * 65,   # lot adjusted
-                reason=reason,
+                pnl=pnl * 65,
+                reason=result,
+                outcome=outcome,
                 time=exit_time
             )
         )
