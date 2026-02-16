@@ -1,4 +1,3 @@
-from utils.logger import log_event
 from db.logger import db_logger
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trigger_armed, trigger_expired
@@ -37,25 +36,6 @@ class StateMachine:
         self.trigger_price = trigger_price
         self.trigger_time = trigger_time
 
-        # ---------- CSV LOGGER ----------
-        log_event(
-            event_type="TRIGGER_ARMED",
-            direction=direction,
-            trigger_price=trigger_price,
-            candle_time=trigger_time,
-            note="Trigger candle detected"
-        )
-
-        # ---------- DATABASE LOGGER ----------
-        db_logger.log_trade_event(
-            event_type="TRIGGER_ARMED",
-            direction=direction,
-            price=trigger_price,
-            trigger_price=trigger_price,
-            candle_time=trigger_time,
-            note="Trigger candle detected",
-            ts=trigger_time
-        )
 
         # ---------- SENDING ALERTS ------------
         telegram_alert.send(
@@ -75,25 +55,9 @@ class StateMachine:
         
         print("trigger is Expired\n")
 
-        # ---------- CSV LOGGER ----------
-        log_event(
-            event_type="TRIGGER_EXPIRED",
-            direction=self.direction,
-            trigger_price=self.trigger_price,
-            candle_time=self.trigger_time,
-            note="No breakout in next candle"
-        )
+        
 
-        # ---------- DATABASE LOGGER ----------
-        db_logger.log_trade_event(
-            event_type="TRIGGER_EXPIRED",
-            direction=self.direction,
-            price=self.trigger_price,
-            trigger_price=self.trigger_price,
-            candle_time=self.trigger_time,
-            note="No breakout in next candle",
-            ts=self.trigger_time
-        )
+        
 
         # ---------- SENDING ALERTS ------------
         telegram_alert.send(

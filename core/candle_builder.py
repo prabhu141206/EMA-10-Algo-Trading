@@ -1,6 +1,3 @@
-# core/candle_builder.py
-
-import datetime
 from core.state_machine import state_machine
 from utils.time_utils import epoch_to_ist
 
