@@ -205,4 +205,4 @@ class VirtualTradeEngine(BaseEngine):
                     pass
             self.ws = None
 
-        self.reset()
+        
