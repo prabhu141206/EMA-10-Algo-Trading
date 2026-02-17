@@ -31,6 +31,9 @@ class BreakoutWatcher:
         if state_machine.is_in_trade():
             return
         
+        if engine.trade_active:
+            return
+        
         print(
             f"[ENTRY] 🚀 {direction} breakout at "
             f"{epoch_to_ist(ts)} | price={price}"

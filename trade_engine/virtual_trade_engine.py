@@ -3,7 +3,7 @@ from options.symbol_builder import build_option_symbol
 from options.symbol_formatter import format_symbol
 from db.logger import db_logger
 from utils.time_utils import epoch_to_ist
-
+from core.state_machine import state_machine
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import option_entry_alert, option_exit_alert
 
@@ -173,10 +173,8 @@ class VirtualTradeEngine(BaseEngine):
             exit_reason=reason
         )
 
-       
-
-        
-
+        state_machine.reset()
+        self.reset()
         print("EXIT:", reason, price)
 
         # ===== TELEGRAM EXIT ALERT (FIXED) =====
