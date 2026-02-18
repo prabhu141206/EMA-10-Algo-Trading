@@ -1,7 +1,7 @@
 from db.logger import db_logger
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trigger_armed, trigger_expired
-
+from utils.time_utils import epoch_to_ist
 
 class StateMachine:
     def __init__(self):
@@ -38,8 +38,9 @@ class StateMachine:
 
 
         # ---------- SENDING ALERTS ------------
+        human_time = epoch_to_ist(trigger_time).strftime("%Y-%m-%d %H:%M:%S")
         telegram_alert.send(
-            trigger_armed(direction, trigger_price, trigger_time)
+            trigger_armed(direction, trigger_price, human_time )
         )
 
     def is_trigger_armed(self):

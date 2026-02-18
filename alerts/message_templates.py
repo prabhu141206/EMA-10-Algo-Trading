@@ -54,19 +54,19 @@ def websocket_reconnected():
 
 def trigger_armed(direction, trigger_price, candle_time):
     return (
-        "🟡 *TRIGGER ARMED*\n\n"
-        f"📊 Direction : `{direction}`\n"
-        f"🎯 Trigger Price : `{trigger_price}`\n"
-        f"🕒 Candle Time : `{candle_time}`\n\n"
+        "🟡 TRIGGER ARMED\n\n"
+        f"📊 Direction : {direction}\n"
+        f"🎯 Trigger Price : {trigger_price}\n"
+        f"🕒 Candle Time : {candle_time}\n\n"
         "_Waiting for breakout confirmation..._"
     )
 
 
 def trigger_expired(direction, trigger_price):
     return (
-        "⚠️ *TRIGGER EXPIRED*\n\n"
-        f"📊 Direction : `{direction}`\n"
-        f"🎯 Trigger Price : `{trigger_price}`\n\n"
+        "⚠️ TRIGGER EXPIRED\n\n"
+        f"📊 Direction : {direction}\n"
+        f"🎯 Trigger Price : {trigger_price}\n\n"
         "❌ No breakout occurred in next candle"
     )
 
@@ -77,12 +77,12 @@ def trigger_expired(direction, trigger_price):
 
 def trade_entry(direction, entry_price, sl_price, target_price, time):
     return (
-        "🚀 *TRADE ENTRY EXECUTED*\n\n"
-        f"📊 Direction : `{direction}`\n"
-        f"💰 Entry Price : `{entry_price}`\n"
-        f"📉 Stop Loss : `{sl_price}`\n"
-        f"🎯 Target : `{target_price}`\n"
-        f"🕒 Entry Time : `{time}`\n\n"
+        "🚀 TRADE ENTRY EXECUTED\n\n"
+        f"📊 Direction : {direction}\n"
+        f"💰 Entry Price : {entry_price}\n"
+        f"📉 Stop Loss : {sl_price}\n"
+        f"🎯 Target : {target_price}\n"
+        f"🕒 Entry Time : {time}\n\n"
         "⚡ Breakout Confirmed"
     )
 
@@ -96,12 +96,12 @@ def trade_exit(direction, exit_price, pnl, reason, time):
     emoji = "🟢" if pnl > 0 else "🔴"
 
     return (
-        f"{emoji} *TRADE CLOSED*\n\n"
-        f"📊 Direction : `{direction}`\n"
-        f"💰 Exit Price : `{exit_price}`\n"
-        f"📈 PnL : `{round(pnl, 2)}`\n"
-        f"📌 Exit Reason : `{reason}`\n"
-        f"🕒 Exit Time : `{time}`"
+        f"{emoji} TRADE CLOSED\n\n"
+        f"📊 Direction : {direction}\n"
+        f"💰 Exit Price : {exit_price}\n"
+        f"📈 PnL : {round(pnl, 2)}\n"
+        f"📌 Exit Reason : {reason}\n"
+        f"🕒 Exit Time : {time}"
     )
 
 
