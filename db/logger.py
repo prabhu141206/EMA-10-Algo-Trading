@@ -20,6 +20,7 @@ class DBLogger:
         capital_used,
         strategy_name
     ):
+        
         try:
             query = """
             INSERT INTO trades
@@ -40,6 +41,7 @@ class DBLogger:
 
             values = (
                 symbol,
+                strategy_name,
                 direction,
                 index_price,
                 entry_price,
@@ -47,8 +49,7 @@ class DBLogger:
                 sl_price,
                 target_price,
                 lot_size,
-                capital_used,
-                strategy_name
+                capital_used
             )
 
             db_queue.put({
@@ -76,8 +77,8 @@ class DBLogger:
             SET
                 exit_price=%s,
                 exit_time=%s,
-                pnl=%s,
-                exit_reason=%s
+                exit_reason=%s,
+                pnl=%s
             WHERE symbol=%s
             AND exit_time IS NULL
             """
@@ -85,8 +86,8 @@ class DBLogger:
             values = (
                 exit_price,
                 exit_time,
-                pnl,
                 exit_reason,
+                pnl,
                 symbol
             )
 
