@@ -173,8 +173,6 @@ class VirtualTradeEngine(BaseEngine):
             exit_reason=reason
         )
 
-        state_machine.reset()
-        self.reset()
         print("EXIT:", reason, price)
 
         # ===== TELEGRAM EXIT ALERT (FIXED) =====
@@ -195,14 +193,16 @@ class VirtualTradeEngine(BaseEngine):
         )
 
         # ===== STOP WS STREAM =====
-        if self.ws:
+        if self.ws and hasattr(self.ws, "fyers"):
             try:
-                self.ws.fyers.disconnect()
-            except:
-                try:
-                    self.ws.fyers.close()
-                except:
-                    pass
-            self.ws = None
+                self.ws.fyers.close()
+            except Exception as e:
+                print("WS close error:", e)
+
+        self.ws = None
+
+        # reset engine and state_machine
+        state_machine.reset()
+        self.reset()
 
         

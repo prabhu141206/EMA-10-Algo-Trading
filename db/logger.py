@@ -33,8 +33,7 @@ class DBLogger:
                 sl_price,
                 target_price,
                 lot_size,
-                capital_used,
-                strategy_name
+                capital_used
             )
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
