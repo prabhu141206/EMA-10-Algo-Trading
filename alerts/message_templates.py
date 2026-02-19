@@ -195,7 +195,7 @@ def daily_summary(total_trades, wins, losses, total_pnl):
     )
 
 
-def option_exit_alert(symbol, trend, instrument, exit_price, pnl, reason, time):
+def option_exit_alert(symbol, trend, instrument, exit_price, pnl, reason, outcome, time):
     return f"""
         🚪 OPTION TRADE EXIT
         
@@ -207,5 +207,6 @@ def option_exit_alert(symbol, trend, instrument, exit_price, pnl, reason, time):
         📊 PnL: {round(pnl,2)}
         
         📌 Reason: {reason}
+        ⚖️ Outcome: {outcome}
         ⏰ Time: {time}
         """

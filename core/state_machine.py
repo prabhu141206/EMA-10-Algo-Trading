@@ -1,4 +1,3 @@
-from db.logger import db_logger
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trigger_armed, trigger_expired
 from utils.time_utils import epoch_to_ist

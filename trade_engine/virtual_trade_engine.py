@@ -57,9 +57,9 @@ class VirtualTradeEngine(BaseEngine):
             result = "Stop Loss Hit 🛑"
 
         if pnl >= 0:
-            outcome = "Profit Booked"
+            outcome = "🟢 Profit Booked"
         else:
-            outcome = "Loss Booked"
+            outcome = "🔴 Loss Booked"
 
         return trend, instrument, result, outcome
 
@@ -156,6 +156,13 @@ class VirtualTradeEngine(BaseEngine):
     # EXIT LOGIC
     # =========================
     def _exit_trade(self, reason, price, ts):
+
+        # 🔴 HARD EXIT LOCK — FIRST LINE
+        if not self.trade_active:
+            return
+
+        # 🔴 Immediately block further exits
+        self.trade_active = False
 
         exit_time = epoch_to_ist(ts)
 
