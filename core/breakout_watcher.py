@@ -1,3 +1,5 @@
+
+
 from core.state_machine import state_machine  
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert
@@ -48,6 +50,11 @@ class BreakoutWatcher:
 
         # build option symbol
         option_symbol = engine.symbol
+
+        # 🚫 Prevent duplicate option streams
+        if engine.ws is not None:
+            print("[WS] Option WebSocket already active.")
+            return
 
         option_ws = OptionWebSocket(
                     access_token=ACCESS_TOKEN,

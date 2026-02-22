@@ -166,10 +166,8 @@ class VirtualTradeEngine(BaseEngine):
 
         exit_time = epoch_to_ist(ts)
 
-        if self.direction == "BUY":
-            pnl = price - self.entry_price
-        else:
-            pnl = self.entry_price - price
+        pnl_points = price - self.entry_price
+        pnl = pnl_points * self.lot_size
 
         # ===== DB EXIT LOG (FIXED) =====
         db_logger.log_paper_trade_exit(
@@ -200,16 +198,19 @@ class VirtualTradeEngine(BaseEngine):
         )
 
         # ===== STOP WS STREAM =====
-        if self.ws and hasattr(self.ws, "fyers"):
+        if self.ws:
             try:
+                # ✅ Prevent any further reconnect attempts
+                self.ws.active = False
+
+                # ✅ Close socket properly
                 self.ws.fyers.close()
+
             except Exception as e:
                 print("WS close error:", e)
 
-        self.ws = None
+            self.ws = None
 
         # reset engine and state_machine
         state_machine.reset()
         self.reset()
-
-        
