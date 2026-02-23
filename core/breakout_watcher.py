@@ -35,6 +35,10 @@ class BreakoutWatcher:
         if engine.trade_active:
             return
         
+        #  MOVE TO IN_TRADE
+        state_machine.enter_trade()
+
+        
         print(
             f"[ENTRY] 🚀 {direction} breakout at "
             f"{epoch_to_ist(ts)} | price={price}"
@@ -82,8 +86,7 @@ class BreakoutWatcher:
 
         
 
-        #  MOVE TO IN_TRADE
-        state_machine.enter_trade()
+        
 
 
 breakout_watcher = BreakoutWatcher()
