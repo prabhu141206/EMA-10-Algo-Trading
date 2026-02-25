@@ -21,9 +21,8 @@ class VirtualTradeEngine(BaseEngine):
         self.ws = None
         self.index_price = None
         self.capital_used = None
-        self.lot_size = 65      #Nifty 50 lot size
+        self.lot_size = 65
 
-    # ========= RESET LOGIC =================
     def reset(self):
         self.trade_active = False
         self.direction = None
@@ -38,34 +37,24 @@ class VirtualTradeEngine(BaseEngine):
     def attach_ws(self, ws):
         self.ws = ws
 
-    # ========= DESCRIPTION HELPERS =================
     def get_trade_description(self, direction):
         if direction == "BUY":
-            trend = "Upside Breakout"
-            instrument = "Buy Call Option"
+            return "Upside Breakout", "Buy Call Option"
         else:
-            trend = "Downside Breakout"
-            instrument = "Buy Put Option"
-        return trend, instrument
+            return "Downside Breakout", "Buy Put Option"
 
     def get_exit_description(self, reason, pnl):
         trend, instrument = self.get_trade_description(self.direction)
 
-        if reason == "TARGET":
-            result = "Target Hit 🎯"
-        else:
-            result = "Stop Loss Hit 🛑"
-
-        if pnl >= 0:
-            outcome = "🟢 Profit Booked"
-        else:
-            outcome = "🔴 Loss Booked"
+        result = "Target Hit 🎯" if reason == "TARGET" else "Stop Loss Hit 🛑"
+        outcome = "🟢 Profit Booked" if pnl >= 0 else "🔴 Loss Booked"
 
         return trend, instrument, result, outcome
 
-    # =========================
-    # TRIGGER COMES FROM STRATEGY
-    # =========================
+    # =============================
+    # TRIGGER
+    # =============================
+
     def on_trigger(self, direction, spot_price, candle_time):
 
         if self.trade_active:
@@ -74,7 +63,6 @@ class VirtualTradeEngine(BaseEngine):
         self.direction = direction
         self.index_price = spot_price
 
-        # FIXED: correct param name
         self.symbol = build_option_symbol(
             index_price=spot_price,
             direction=direction
@@ -82,13 +70,12 @@ class VirtualTradeEngine(BaseEngine):
 
         self.entry_time = candle_time
 
-        
-
         print("Selected Symbol:", self.symbol)
 
-    # =========================
-    # FIRST TICK = ENTRY
-    # =========================
+    # =============================
+    # OPTION TICK
+    # =============================
+
     def on_option_tick(self, price, bid, ask, ts):
 
         if self.symbol is None or self.direction is None:
@@ -96,6 +83,7 @@ class VirtualTradeEngine(BaseEngine):
 
         # ===== ENTRY =====
         if not self.trade_active:
+
             self.entry_price = price
             self.trade_active = True
 
@@ -105,7 +93,6 @@ class VirtualTradeEngine(BaseEngine):
 
             entry_time = epoch_to_ist(ts)
 
-            # ===== DB ENTRY LOG (FIXED FOR NEW TABLE STRUCTURE) =====
             db_logger.log_paper_trade_entry(
                 symbol=self.symbol,
                 direction=self.direction,
@@ -119,14 +106,10 @@ class VirtualTradeEngine(BaseEngine):
                 strategy_name="EMA10_BREAKOUT"
             )
 
-
-
             print("ENTRY @", price)
 
-            # ===== TELEGRAM ENTRY ALERT =====
             trend, instrument = self.get_trade_description(self.direction)
             readable_symbol = format_symbol(self.symbol)
-            capital_required = price * 65
 
             telegram_alert.send(
                 option_entry_alert(
@@ -134,7 +117,7 @@ class VirtualTradeEngine(BaseEngine):
                     trend=trend,
                     instrument=instrument,
                     entry_price=price,
-                    capital=capital_required,
+                    capital=self.capital_used,
                     target=self.target,
                     sl=self.sl,
                     time=entry_time
@@ -143,33 +126,34 @@ class VirtualTradeEngine(BaseEngine):
 
             return
 
-        # =========================
-        # CHECK EXIT CONDITIONS
-        # =========================
+        # ===== EXIT CHECK =====
+
         if price >= self.target:
             self._exit_trade("TARGET", price, ts)
 
         elif price <= self.sl:
             self._exit_trade("SL", price, ts)
 
-    # =========================
-    # EXIT LOGIC
-    # =========================
+    # =============================
+    # EXIT
+    # =============================
+
     def _exit_trade(self, reason, price, ts):
 
-        # 🔴 HARD EXIT LOCK — FIRST LINE
         if not self.trade_active:
             return
 
-        # 🔴 Immediately block further exits
         self.trade_active = False
 
         exit_time = epoch_to_ist(ts)
 
-        pnl_points = price - self.entry_price
+        if self.direction == "BUY":
+            pnl_points = price - self.entry_price
+        else:
+            pnl_points = self.entry_price - price
+
         pnl = pnl_points * self.lot_size
 
-        # ===== DB EXIT LOG (FIXED) =====
         db_logger.log_paper_trade_exit(
             symbol=self.symbol,
             exit_price=price,
@@ -180,7 +164,6 @@ class VirtualTradeEngine(BaseEngine):
 
         print("EXIT:", reason, price)
 
-        # ===== TELEGRAM EXIT ALERT (FIXED) =====
         trend, instrument, result, outcome = self.get_exit_description(reason, pnl)
         readable_symbol = format_symbol(self.symbol)
 
@@ -190,27 +173,21 @@ class VirtualTradeEngine(BaseEngine):
                 trend=trend,
                 instrument=instrument,
                 exit_price=price,
-                pnl=pnl * 65,
+                pnl=pnl,
                 reason=result,
                 outcome=outcome,
                 time=exit_time
             )
         )
 
-        # ===== STOP WS STREAM =====
+        # Proper WebSocket close
         if self.ws:
             try:
-                # ✅ Prevent any further reconnect attempts
-                self.ws.active = False
-
-                # ✅ Close socket properly
                 self.ws.fyers.disconnect()
-
             except Exception as e:
                 print("WS close error:", e)
 
             self.ws = None
 
-        # reset engine and state_machine
         state_machine.reset()
-        self.reset()
+        self.reset() 

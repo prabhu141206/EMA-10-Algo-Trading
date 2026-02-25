@@ -1,5 +1,3 @@
-
-
 from core.state_machine import state_machine  
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert
@@ -27,53 +25,50 @@ class BreakoutWatcher:
             self._fire_entry(direction, price, tick["timestamp"])
 
     def _fire_entry(self, direction, price, ts):
-        
-        # HARD BLOCK: prevent multiple entries
+
+        # Hard protection
         if state_machine.is_in_trade():
             return
-        
+
         if engine.trade_active:
             return
-        
-        #  MOVE TO IN_TRADE
-        state_machine.enter_trade()
 
-        
         print(
             f"[ENTRY] 🚀 {direction} breakout at "
             f"{epoch_to_ist(ts)} | price={price}"
         )
 
-
-        #  START PAPER TRADE
+        # Step 1 — Build option symbol
         engine.on_trigger(
-                direction=direction,
-                spot_price=price,
-                candle_time=ts
+            direction=direction,
+            spot_price=price,
+            candle_time=ts
         )
 
-        # build option symbol
         option_symbol = engine.symbol
 
-        # 🚫 Prevent duplicate option streams
+        # Step 2 — If old WS exists, clean it properly
         if engine.ws is not None:
-            print("[WS] Option WebSocket already active.")
-            return
+            try:
+                engine.ws.fyers.disconnect()
+            except:
+                pass
+            engine.ws = None
 
+        # Step 3 — Create new WS
         option_ws = OptionWebSocket(
-                    access_token=ACCESS_TOKEN,
-                    symbol=option_symbol,
-                    engine=engine
-                )
+            access_token=ACCESS_TOKEN,
+            symbol=option_symbol,
+            engine=engine
+        )
 
         engine.attach_ws(option_ws)
         option_ws.connect()
 
-       
+        # Step 4 — NOW mark trade state
+        state_machine.enter_trade()
 
-
-        # ---------- SENDING ALERTS ------------
-        
+        # Step 5 — Telegram alert
         telegram_alert.send(
             trade_entry(
                 direction,
@@ -83,10 +78,6 @@ class BreakoutWatcher:
                 epoch_to_ist(ts)
             )
         )
-
-        
-
-        
 
 
 breakout_watcher = BreakoutWatcher()
