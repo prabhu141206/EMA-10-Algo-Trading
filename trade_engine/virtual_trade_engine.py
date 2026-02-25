@@ -204,7 +204,7 @@ class VirtualTradeEngine(BaseEngine):
                 self.ws.active = False
 
                 # ✅ Close socket properly
-                self.ws.fyers.close()
+                self.ws.fyers.disconnect()
 
             except Exception as e:
                 print("WS close error:", e)
