@@ -23,6 +23,7 @@ class BreakoutWatcher:
 
         elif direction == "SELL" and price <= trigger_price:
             self._fire_entry(direction, price, tick["timestamp"])
+            
 
     def _fire_entry(self, direction, price, ts):
 
@@ -38,37 +39,17 @@ class BreakoutWatcher:
             f"{epoch_to_ist(ts)} | price={price}"
         )
 
-        # Step 1 — Build option symbol
-        engine.on_trigger(
+        # ✅ Only tell engine to start trade
+        engine.start_trade(
             direction=direction,
             spot_price=price,
             candle_time=ts
         )
 
-        option_symbol = engine.symbol
-
-        # Step 2 — If old WS exists, clean it properly
-        if engine.ws is not None:
-            try:
-                engine.ws.fyers.disconnect()
-            except:
-                pass
-            engine.ws = None
-
-        # Step 3 — Create new WS
-        option_ws = OptionWebSocket(
-            access_token=ACCESS_TOKEN,
-            symbol=option_symbol,
-            engine=engine
-        )
-
-        engine.attach_ws(option_ws)
-        option_ws.connect()
-
-        # Step 4 — NOW mark trade state
+        # Mark state AFTER engine call
         state_machine.enter_trade()
 
-        # Step 5 — Telegram alert
+        # Strategy-level telegram
         telegram_alert.send(
             trade_entry(
                 direction,
@@ -78,6 +59,9 @@ class BreakoutWatcher:
                 epoch_to_ist(ts)
             )
         )
+
+
+
 
 
 breakout_watcher = BreakoutWatcher()

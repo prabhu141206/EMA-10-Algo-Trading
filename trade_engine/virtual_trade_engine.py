@@ -1,4 +1,5 @@
 from trade_engine.base_engine import BaseEngine
+from trade_engine.option_ws import OptionWebSocket
 from options.symbol_builder import build_option_symbol
 from options.symbol_formatter import format_symbol
 from db.logger import db_logger
@@ -6,6 +7,7 @@ from utils.time_utils import epoch_to_ist
 from core.state_machine import state_machine
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import option_entry_alert, option_exit_alert
+from config.settings import ACCESS_TOKEN
 
 
 class VirtualTradeEngine(BaseEngine):
@@ -23,6 +25,46 @@ class VirtualTradeEngine(BaseEngine):
         self.capital_used = None
         self.lot_size = 65
 
+    # ======================================================
+    # START TRADE (Called from BreakoutWatcher)
+    # ======================================================
+
+    def start_trade(self, direction, spot_price, candle_time):
+
+        if self.trade_active:
+            return
+
+        self.direction = direction
+        self.index_price = spot_price
+        self.entry_time = candle_time
+
+        self.symbol = build_option_symbol(
+            index_price=spot_price,
+            direction=direction
+        )
+
+        print("Selected Symbol:", self.symbol)
+
+        # 🔥 Optional improvement:
+        # Always clean stale WS before creating new one
+        if self.ws is not None:
+            try:
+                self.ws.fyers.disconnect()
+            except:
+                pass
+            self.ws = None
+
+        # Create fresh WebSocket
+        self.ws = OptionWebSocket(
+            access_token=ACCESS_TOKEN,
+            symbol=self.symbol,
+            engine=self
+        )
+
+        self.ws.connect()
+
+
+
     def reset(self):
         self.trade_active = False
         self.direction = None
@@ -34,8 +76,6 @@ class VirtualTradeEngine(BaseEngine):
         self.index_price = None
         self.capital_used = None
 
-    def attach_ws(self, ws):
-        self.ws = ws
 
     def get_trade_description(self, direction):
         if direction == "BUY":
@@ -51,26 +91,6 @@ class VirtualTradeEngine(BaseEngine):
 
         return trend, instrument, result, outcome
 
-    # =============================
-    # TRIGGER
-    # =============================
-
-    def on_trigger(self, direction, spot_price, candle_time):
-
-        if self.trade_active:
-            return
-
-        self.direction = direction
-        self.index_price = spot_price
-
-        self.symbol = build_option_symbol(
-            index_price=spot_price,
-            direction=direction
-        )
-
-        self.entry_time = candle_time
-
-        print("Selected Symbol:", self.symbol)
 
     # =============================
     # OPTION TICK
