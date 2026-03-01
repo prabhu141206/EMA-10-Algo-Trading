@@ -2,15 +2,16 @@ from fyers_apiv3.FyersWebsocket.tbt_ws import FyersTbtSocket, SubscriptionModes
 from utils.time_utils import is_market_open
 import time
 
+
 class OptionWebSocket:
 
-    def __init__(self, access_token, engine, symbol):
-        self.engine = engine
-        self.symbol = symbol
+    def __init__(self, access_token):
+        self.active = True
+        self.current_symbol = None
+        self.engine = None
         self.reconnect_attempts = 0
         self.max_reconnect_attempts = 3
-        self.reconnect_cooldown = 15   # seconds
-        self.active = True
+        self.reconnect_cooldown = 10
 
         self.fyers = FyersTbtSocket(
             access_token=access_token,
@@ -23,7 +24,57 @@ class OptionWebSocket:
             on_error_message=self.onerror_message
         )
 
- 
+    # 🔹 Connect once at system start
+    def connect(self):
+        print("[WS] Starting persistent option socket...")
+        self.fyers.connect()
+
+    # 🔹 Subscribe dynamically when trade starts
+    def subscribe(self, symbol, engine):
+        print(f"[WS] Subscribing to {symbol}")
+
+        self.current_symbol = symbol
+        self.engine = engine
+
+        self.fyers.subscribe(
+            symbol_tickers=[symbol],
+            channelNo='1',
+            mode=SubscriptionModes.DEPTH
+        )
+
+    # 🔹 Unsubscribe on trade exit
+    def unsubscribe(self):
+        if not self.current_symbol:
+            return
+
+        print(f"[WS] Unsubscribing {self.current_symbol}")
+
+        try:
+            self.fyers.unsubscribe(
+                symbol_tickers=[self.current_symbol],
+                channelNo='1'
+            )
+        except:
+            pass
+
+        self.current_symbol = None
+        self.engine = None
+
+    def onopen(self):
+        print("[WS] Connected.")
+        self.reconnect_attempts = 0
+        self.fyers.keep_running()
+
+    def on_depth_update(self, ticker, message):
+        if not self.engine:
+            return
+
+        ltp = (message.bidprice[0] + message.askprice[0]) / 2
+        bid = message.bidprice[0]
+        ask = message.askprice[0]
+        ts = message.timestamp
+
+        self.engine.on_option_tick(ltp, bid, ask, ts)
 
     def onerror(self, msg):
         print("WS Error:", msg)
@@ -33,74 +84,25 @@ class OptionWebSocket:
 
         now = int(time.time())
 
-        # 🔒 Market closed → Stop permanently
         if not is_market_open(now):
             print("[WS] Market closed. Stopping reconnect.")
             self.active = False
             return
 
-        # 🚫 Rate limited (429)
+        # 🚫 Stop completely on 429 (rate limit)
         if "429" in str(msg):
-            print("[WS] Rate limited. Cooling down...")
-            time.sleep(60)
+            print("[WS] Rate limited. Stopping reconnect.")
+            self.active = False
             return
 
-        # 🔁 Controlled reconnect
         if self.reconnect_attempts < self.max_reconnect_attempts:
             self.reconnect_attempts += 1
-            print(f"[WS] Reconnecting ({self.reconnect_attempts}/{self.max_reconnect_attempts})...")
+            print(f"[WS] Reconnecting ({self.reconnect_attempts})...")
             time.sleep(self.reconnect_cooldown)
             self.connect()
         else:
-            print("[WS] Max reconnect attempts reached. Giving up.")
+            print("[WS] Max reconnect attempts reached.")
             self.active = False
-
-
-    def onopen(self):
-
-        # ✅ RESET reconnect attempts when connection succeeds
-        self.reconnect_attempts = 0
-        mode = SubscriptionModes.DEPTH
-        channel = '1'
-
-        self.fyers.subscribe(
-            symbol_tickers=[self.symbol],
-            channelNo=channel,
-            mode=mode
-        )
-
-        self.fyers.switchChannel(
-            resume_channels=[channel],
-            pause_channels=[]
-        )
-
-        self.fyers.keep_running()
-
-    # 🔥 IMPORTANT PART
-    def on_depth_update(self, ticker, message):
-
-        ltp_price = (message.bidprice[0] + message.askprice[0]) / 2
-        bid = message.bidprice[0]
-        ask = message.askprice[0]
-        ts = message.timestamp
-
-        self.engine.on_option_tick(ltp_price, bid, ask, ts)
-
-    def onerror(self, msg):
-        print("WS Error:", msg)
-
-        now = int(time.time())
-
-        # 1️⃣ If market closed → STOP
-        if not is_market_open(now):
-            print("[WS] Market closed. Not reconnecting.")
-            return
-
-        # 2️⃣ If rate limited (429) → cooldown
-        if "429" in str(msg):
-            print("[WS] Rate limited. Cooling down 60 seconds...")
-            time.sleep(60)
-            return
 
     def onclose(self, msg):
         print("WS Closed:", msg)

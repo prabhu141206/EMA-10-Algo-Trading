@@ -1,5 +1,4 @@
 from trade_engine.base_engine import BaseEngine
-from trade_engine.option_ws import OptionWebSocket
 from options.symbol_builder import build_option_symbol
 from options.symbol_formatter import format_symbol
 from db.logger import db_logger
@@ -7,12 +6,13 @@ from utils.time_utils import epoch_to_ist
 from core.state_machine import state_machine
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import option_entry_alert, option_exit_alert
-from config.settings import ACCESS_TOKEN
 
 
 class VirtualTradeEngine(BaseEngine):
 
-    def __init__(self):
+    def __init__(self, option_ws):
+        self.option_ws = option_ws
+
         self.trade_active = False
         self.direction = None
         self.symbol = None
@@ -20,14 +20,13 @@ class VirtualTradeEngine(BaseEngine):
         self.target = None
         self.sl = None
         self.entry_time = None
-        self.ws = None
         self.index_price = None
         self.capital_used = None
         self.lot_size = 65
 
-    # ======================================================
-    # START TRADE (Called from BreakoutWatcher)
-    # ======================================================
+    # ---------------------------------------------------
+    # START TRADE
+    # ---------------------------------------------------
 
     def start_trade(self, direction, spot_price, candle_time):
 
@@ -45,63 +44,19 @@ class VirtualTradeEngine(BaseEngine):
 
         print("Selected Symbol:", self.symbol)
 
-        # 🔥 Optional improvement:
-        # Always clean stale WS before creating new one
-        if self.ws is not None:
-            try:
-                self.ws.fyers.disconnect()
-            except:
-                pass
-            self.ws = None
+        # 🔥 Only subscribe — do NOT create socket
+        self.option_ws.subscribe(self.symbol, self)
 
-        # Create fresh WebSocket
-        self.ws = OptionWebSocket(
-            access_token=ACCESS_TOKEN,
-            symbol=self.symbol,
-            engine=self
-        )
-
-        self.ws.connect()
-
-
-
-    def reset(self):
-        self.trade_active = False
-        self.direction = None
-        self.symbol = None
-        self.entry_price = None
-        self.target = None
-        self.sl = None
-        self.entry_time = None
-        self.index_price = None
-        self.capital_used = None
-
-
-    def get_trade_description(self, direction):
-        if direction == "BUY":
-            return "Upside Breakout", "Buy Call Option"
-        else:
-            return "Downside Breakout", "Buy Put Option"
-
-    def get_exit_description(self, reason, pnl):
-        trend, instrument = self.get_trade_description(self.direction)
-
-        result = "Target Hit 🎯" if reason == "TARGET" else "Stop Loss Hit 🛑"
-        outcome = "🟢 Profit Booked" if pnl >= 0 else "🔴 Loss Booked"
-
-        return trend, instrument, result, outcome
-
-
-    # =============================
+    # ---------------------------------------------------
     # OPTION TICK
-    # =============================
+    # ---------------------------------------------------
 
     def on_option_tick(self, price, bid, ask, ts):
 
-        if self.symbol is None or self.direction is None:
+        if not self.direction:
             return
 
-        # ===== ENTRY =====
+        # ENTRY
         if not self.trade_active:
 
             self.entry_price = price
@@ -128,12 +83,12 @@ class VirtualTradeEngine(BaseEngine):
 
             print("ENTRY @", price)
 
-            trend, instrument = self.get_trade_description(self.direction)
-            readable_symbol = format_symbol(self.symbol)
+            trend = "Upside Breakout" if self.direction == "BUY" else "Downside Breakout"
+            instrument = "Buy Call Option" if self.direction == "BUY" else "Buy Put Option"
 
             telegram_alert.send(
                 option_entry_alert(
-                    symbol=readable_symbol,
+                    symbol=format_symbol(self.symbol),
                     trend=trend,
                     instrument=instrument,
                     entry_price=price,
@@ -146,17 +101,16 @@ class VirtualTradeEngine(BaseEngine):
 
             return
 
-        # ===== EXIT CHECK =====
-
+        # EXIT
         if price >= self.target:
             self._exit_trade("TARGET", price, ts)
 
         elif price <= self.sl:
             self._exit_trade("SL", price, ts)
 
-    # =============================
+    # ---------------------------------------------------
     # EXIT
-    # =============================
+    # ---------------------------------------------------
 
     def _exit_trade(self, reason, price, ts):
 
@@ -167,10 +121,11 @@ class VirtualTradeEngine(BaseEngine):
 
         exit_time = epoch_to_ist(ts)
 
-        if self.direction == "BUY":
-            pnl_points = price - self.entry_price
-        else:
-            pnl_points = self.entry_price - price
+        pnl_points = (
+            price - self.entry_price
+            if self.direction == "BUY"
+            else self.entry_price - price
+        )
 
         pnl = pnl_points * self.lot_size
 
@@ -184,30 +139,31 @@ class VirtualTradeEngine(BaseEngine):
 
         print("EXIT:", reason, price)
 
-        trend, instrument, result, outcome = self.get_exit_description(reason, pnl)
-        readable_symbol = format_symbol(self.symbol)
-
         telegram_alert.send(
             option_exit_alert(
-                symbol=readable_symbol,
-                trend=trend,
-                instrument=instrument,
+                symbol=format_symbol(self.symbol),
+                trend="Trade Exit",
+                instrument="",
                 exit_price=price,
                 pnl=pnl,
-                reason=result,
-                outcome=outcome,
+                reason=reason,
+                outcome="🟢 Profit" if pnl >= 0 else "🔴 Loss",
                 time=exit_time
             )
         )
 
-        # Proper WebSocket close
-        if self.ws:
-            try:
-                self.ws.fyers.disconnect()
-            except Exception as e:
-                print("WS close error:", e)
-
-            self.ws = None
+        # 🔥 Only unsubscribe — do NOT close socket
+        self.option_ws.unsubscribe()
 
         state_machine.reset()
-        self.reset() 
+        self._reset_internal()
+
+    def _reset_internal(self):
+        self.direction = None
+        self.symbol = None
+        self.entry_price = None
+        self.target = None
+        self.sl = None
+        self.entry_time = None
+        self.index_price = None
+        self.capital_used = None
