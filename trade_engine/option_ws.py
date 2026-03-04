@@ -11,7 +11,12 @@ class OptionWebSocket:
         self.engine = None
         self.reconnect_attempts = 0
         self.max_reconnect_attempts = 3
+<<<<<<< HEAD
         self.reconnect_cooldown = 10
+=======
+        self.reconnect_cooldown = 15
+        self.active = True
+>>>>>>> 89a17363fe61e3f9beda6c162038597cb47e2f02
 
         self.fyers = FyersTbtSocket(
             access_token=access_token,
@@ -24,6 +29,7 @@ class OptionWebSocket:
             on_error_message=self.onerror_message
         )
 
+<<<<<<< HEAD
     # 🔹 Connect once at system start
     def connect(self):
         print("[WS] Starting persistent option socket...")
@@ -82,6 +88,49 @@ class OptionWebSocket:
         if not self.active:
             return
 
+=======
+    # 🔥 ADD THIS METHOD
+    def connect(self):
+        if not self.active:
+            return
+
+        print(f"[WS] Connecting to {self.symbol}...")
+        self.fyers.connect()
+
+    def onopen(self):
+        self.reconnect_attempts = 0
+
+        mode = SubscriptionModes.DEPTH
+        channel = '1'
+
+        self.fyers.subscribe(
+            symbol_tickers=[self.symbol],
+            channelNo=channel,
+            mode=mode
+        )
+
+        self.fyers.switchChannel(
+            resume_channels=[channel],
+            pause_channels=[]
+        )
+
+        self.fyers.keep_running()
+
+    def on_depth_update(self, ticker, message):
+        ltp_price = (message.bidprice[0] + message.askprice[0]) / 2
+        bid = message.bidprice[0]
+        ask = message.askprice[0]
+        ts = message.timestamp
+
+        self.engine.on_option_tick(ltp_price, bid, ask, ts)
+
+    def onerror(self, msg):
+        print("WS Error:", msg)
+
+        if not self.active:
+            return
+
+>>>>>>> 89a17363fe61e3f9beda6c162038597cb47e2f02
         now = int(time.time())
 
         if not is_market_open(now):
@@ -89,15 +138,25 @@ class OptionWebSocket:
             self.active = False
             return
 
+<<<<<<< HEAD
         # 🚫 Stop completely on 429 (rate limit)
         if "429" in str(msg):
             print("[WS] Rate limited. Stopping reconnect.")
             self.active = False
+=======
+        if "429" in str(msg):
+            print("[WS] Rate limited. Cooling down 60 seconds...")
+            time.sleep(60)
+>>>>>>> 89a17363fe61e3f9beda6c162038597cb47e2f02
             return
 
         if self.reconnect_attempts < self.max_reconnect_attempts:
             self.reconnect_attempts += 1
+<<<<<<< HEAD
             print(f"[WS] Reconnecting ({self.reconnect_attempts})...")
+=======
+            print(f"[WS] Reconnecting ({self.reconnect_attempts}/{self.max_reconnect_attempts})...")
+>>>>>>> 89a17363fe61e3f9beda6c162038597cb47e2f02
             time.sleep(self.reconnect_cooldown)
             self.connect()
         else:
