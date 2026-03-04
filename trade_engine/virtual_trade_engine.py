@@ -25,7 +25,7 @@ class VirtualTradeEngine(BaseEngine):
         self.lot_size = 65
 
     # ---------------------------------------------------
-    # START TRADE
+    # START TRADE 
     # ---------------------------------------------------
 
     def start_trade(self, direction, spot_price, candle_time):

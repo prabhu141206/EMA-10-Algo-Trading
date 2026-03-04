@@ -1,37 +1,39 @@
-from core.state_machine import state_machine  
+from core.state_machine import state_machine
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trade_entry
-from trade_engine.virtual_trade_engine import VirtualTradeEngine
-from trade_engine.option_ws import OptionWebSocket
-from config.settings import ACCESS_TOKEN
-
-engine = VirtualTradeEngine()
 
 
 class BreakoutWatcher:
+
+    def __init__(self, engine):
+        self.engine = engine
+
     def check_tick(self, tick: dict):
+
         if not state_machine.is_trigger_armed():
             return
 
         price = tick["price"]
+        ts = tick["timestamp"]
+
         direction = state_machine.direction
         trigger_price = state_machine.trigger_price
 
         if direction == "BUY" and price >= trigger_price:
-            self._fire_entry(direction, price, tick["timestamp"])
+            self._fire_entry(direction, price, ts)
 
         elif direction == "SELL" and price <= trigger_price:
-            self._fire_entry(direction, price, tick["timestamp"])
-            
+            self._fire_entry(direction, price, ts)
 
     def _fire_entry(self, direction, price, ts):
 
-        # Hard protection
+        # Protection 1
         if state_machine.is_in_trade():
             return
 
-        if engine.trade_active:
+        # Protection 2
+        if self.engine.trade_active:
             return
 
         print(
@@ -39,17 +41,17 @@ class BreakoutWatcher:
             f"{epoch_to_ist(ts)} | price={price}"
         )
 
-        # ✅ Only tell engine to start trade
-        engine.start_trade(
+        # Tell engine to start trade
+        self.engine.start_trade(
             direction=direction,
             spot_price=price,
             candle_time=ts
         )
 
-        # Mark state AFTER engine call
+        # Now mark state
         state_machine.enter_trade()
 
-        # Strategy-level telegram
+        # Telegram alert
         telegram_alert.send(
             trade_entry(
                 direction,
@@ -59,9 +61,3 @@ class BreakoutWatcher:
                 epoch_to_ist(ts)
             )
         )
-
-
-
-
-
-breakout_watcher = BreakoutWatcher()

@@ -1,36 +1,34 @@
 from core.candle_builder import candle_builder
 from core.signal_engine import signal_engine
 from core.state_machine import state_machine
-from core.breakout_watcher import breakout_watcher
 from utils.time_utils import is_market_open, is_entry_allowed, epoch_to_ist
 from datetime import timedelta
 
 
 class TickHandler:
-    def handle_tick(self, tick: dict):
-        ts = tick["timestamp"]
-        price = tick["price"]
 
-        # 0️⃣ Ignore non-market ticks
+    def __init__(self, breakout_watcher):
+        self.breakout_watcher = breakout_watcher
+
+    def handle_tick(self, tick: dict):
+
+        ts = tick["timestamp"]
+
         if not is_market_open(ts):
             return
 
-        # 1️⃣ Always build candles
         candle_closed, closed_candle = candle_builder.add_tick(tick)
 
-        # =================================================
-        # 2️⃣ CANDLE CLOSE LOGIC (SINGLE SOURCE OF TRUTH)
-        # =================================================
+        # ============================
+        # Candle close logic
+        # ============================
         if candle_closed:
 
-            # 🔴 Expire previous trigger if exists
             if state_machine.is_trigger_armed():
                 state_machine.expire_trigger()
 
-            # 🔵 Evaluate new candle for trigger
             signal_engine.on_candle_close(closed_candle)
 
-            # ✅ TIMEZONE SAFE PRINTING
             start = epoch_to_ist(closed_candle["timestamp"])
             end = start + timedelta(minutes=5)
 
@@ -51,14 +49,10 @@ class TickHandler:
             else:
                 print("[INFO] ❌ No valid setup on this candle")
 
-            return  # ⛔ nothing else on candle-close tick
+            return
 
-        # =================================================
-        # 3️⃣ TICK-BY-TICK BREAKOUT
-        # =================================================
+        # ============================
+        # Tick-by-tick breakout
+        # ============================
         if state_machine.is_trigger_armed() and is_entry_allowed(ts):
-            breakout_watcher.check_tick(tick)
-
-
-
-tick_handler = TickHandler()
+            self.breakout_watcher.check_tick(tick)
