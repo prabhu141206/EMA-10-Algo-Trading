@@ -36,6 +36,9 @@ class OptionWebSocket:
         self.current_symbol = symbol
         self.engine = engine
 
+        print(f"[OPTION WS] Subscribing → {symbol}")
+        print(f"[OPTION WS] Engine attached → {engine._class.name_}")
+
         self.fyers.subscribe(
             symbol_tickers=[symbol],
             channelNo='1',
@@ -61,20 +64,29 @@ class OptionWebSocket:
         self.engine = None
 
     def onopen(self):
-        print("[WS] Connected.")
+        print("[WS] Connected successfully.")
         self.reconnect_attempts = 0
         self.fyers.keep_running()
 
     def on_depth_update(self, ticker, message):
-        if not self.engine:
-            return
+        
 
         ltp = (message.bidprice[0] + message.askprice[0]) / 2
         bid = message.bidprice[0]
         ask = message.askprice[0]
         ts = message.timestamp
 
+        print(
+        f"[OPTION TICK] {ticker} "
+        f"bid={bid} ask={ask} ltp={ltp}"
+        )
+
+        if not self.engine:
+            print("[OPTION WS] No engine attached — tick ignored")
+            return
+        
         self.engine.on_option_tick(ltp, bid, ask, ts)
+        print("option tick received")
 
     def onerror(self, msg):
         print("WS Error:", msg)
