@@ -37,7 +37,7 @@ class OptionWebSocket:
         self.engine = engine
 
         print(f"[OPTION WS] Subscribing → {symbol}")
-        print(f"[OPTION WS] Engine attached → {engine._class.name_}")
+        print(f"[OPTION WS] Engine attached → {engine._class__.__name__}")
 
         self.fyers.subscribe(
             symbol_tickers=[symbol],
@@ -76,10 +76,8 @@ class OptionWebSocket:
         ask = message.askprice[0]
         ts = message.timestamp
 
-        print(
-        f"[OPTION TICK] {ticker} "
-        f"bid={bid} ask={ask} ltp={ltp}"
-        )
+        #testing 8
+        print(f"[OPTION TICK] {ticker} ltp={ltp}")
 
         if not self.engine:
             print("[OPTION WS] No engine attached — tick ignored")

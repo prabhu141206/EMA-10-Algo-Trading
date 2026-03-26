@@ -1,52 +1,54 @@
 from core.indicators import ema_10
-from core.state_machine import state_machine
 
 
 class SignalEngine:
-    def __init__(self):
-        self.prev_ema = None  # EMA from previous candle only
+    def __init__(self, state_machine):
+        """
+        Each strategy gets its own SignalEngine
+        tied to its own state machine.
+        """
+        self.state_machine = state_machine
+        self.prev_ema = None  # EMA of previous candle
 
     def on_candle_close(self, candle: dict):
+
         open_ = candle["open"]
         high = candle["high"]
         low = candle["low"]
         close = candle["close"]
 
-        # 1️⃣ Compute EMA but DO NOT use it yet
+        # Compute EMA for current candle
         ema_now = ema_10.update(close)
         candle["ema"] = ema_now
 
-        # First candle → no previous EMA to compare with
+        # First candle → no comparison possible
         if self.prev_ema is None:
             self.prev_ema = ema_now
             return
 
-        # ================= BUY (Design A) =================
+        # ================= BUY CONDITION =================
         if (
-            close > self.prev_ema and     # trend up (based on OLD EMA)
-            close < open_ and             # red candle
-            low > self.prev_ema           # no EMA touch
+            close > self.prev_ema and   # uptrend
+            close < open_ and           # red candle
+            low > self.prev_ema         # no EMA touch
         ):
-            state_machine.arm_trigger(
+            self.state_machine.arm_trigger(
                 direction="BUY",
                 trigger_price=high,
                 trigger_time=candle["timestamp"]
             )
 
-        # ================= SELL (Design A) =================
+        # ================= SELL CONDITION =================
         elif (
-            close < self.prev_ema and     # trend down
-            close > open_ and             # green candle
-            high < self.prev_ema          # no EMA touch
+            close < self.prev_ema and
+            close > open_ and
+            high < self.prev_ema
         ):
-            state_machine.arm_trigger(
+            self.state_machine.arm_trigger(
                 direction="SELL",
                 trigger_price=low,
                 trigger_time=candle["timestamp"]
             )
 
-        # 4️⃣ Store EMA for NEXT candle
+        # Store EMA for next candle
         self.prev_ema = ema_now
-
-
-signal_engine = SignalEngine()

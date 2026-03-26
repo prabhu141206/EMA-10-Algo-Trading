@@ -1,169 +1,133 @@
-from trade_engine.base_engine import BaseEngine
+# =========================================================
+# VIRTUAL TRADE ENGINE (MINIMAL + STABLE VERSION)
+# =========================================================
+
 from options.symbol_builder import build_option_symbol
-from options.symbol_formatter import format_symbol
-from db.logger import db_logger
-from utils.time_utils import epoch_to_ist
-from core.state_machine import state_machine
-from alerts.telegram_alert import telegram_alert
-from alerts.message_templates import option_entry_alert, option_exit_alert
 
 
-class VirtualTradeEngine(BaseEngine):
+class VirtualTradeEngine:
 
-    def __init__(self, option_ws):
+    def __init__(self, option_ws, state_machine):
+        """
+        Engine handles ONLY:
+        - symbol creation
+        - entry
+        - exit
+        - reset
+
+        It does NOT:
+        ❌ decide strategy
+        ❌ manage triggers
+        ❌ send alerts
+        ❌ write to DB
+        """
+
         self.option_ws = option_ws
+        self.state_machine = state_machine
 
+        # Trade state
         self.trade_active = False
         self.direction = None
         self.symbol = None
+
+        # Trade data
         self.entry_price = None
         self.target = None
         self.sl = None
-        self.entry_time = None
-        self.index_price = None
-        self.capital_used = None
-        self.lot_size = 65
 
-    # ---------------------------------------------------
-    # START TRADE 
-    # ---------------------------------------------------
+    # =====================================================
+    # START TRADE (called from BreakoutWatcher)
+    # =====================================================
 
     def start_trade(self, direction, spot_price, candle_time):
 
+        # Safety check
         if self.trade_active:
+            print("[ENGINE] Trade already active — ignoring")
             return
 
         self.direction = direction
-        self.index_price = spot_price
-        self.entry_time = candle_time
 
+        # 🔴 CRITICAL: Symbol creation MUST exist
         self.symbol = build_option_symbol(
             index_price=spot_price,
             direction=direction
         )
 
-        print("Selected Symbol:", self.symbol)
+        print(f"[ENGINE] Selected Symbol: {self.symbol}")
 
-        # 🔥 Only subscribe — do NOT create socket
+        # Subscribe to option ticks
         self.option_ws.subscribe(self.symbol, self)
+        
+        #testing 7
+        print(f"[ENGINE] Start trade → {direction}")
+        print(f"[ENGINE] Symbol → {self.symbol}")
 
-    # ---------------------------------------------------
-    # OPTION TICK
-    # ---------------------------------------------------
+    # =====================================================
+    # OPTION TICK (called from OptionWebSocket)
+    # =====================================================
 
     def on_option_tick(self, price, bid, ask, ts):
 
+        # Ignore if direction not set (safety)
         if not self.direction:
             return
 
-        # ENTRY
+        # ================= ENTRY =================
         if not self.trade_active:
 
-            self.entry_price = price
+            # First tick = entry
             self.trade_active = True
 
-            self.capital_used = price * self.lot_size
+            self.entry_price = price
             self.target = price + 20
             self.sl = price - 10
 
-            entry_time = epoch_to_ist(ts)
-
-            db_logger.log_paper_trade_entry(
-                symbol=self.symbol,
-                direction=self.direction,
-                index_price=self.index_price,
-                entry_price=price,
-                entry_time=entry_time,
-                sl_price=self.sl,
-                target_price=self.target,
-                lot_size=self.lot_size,
-                capital_used=self.capital_used,
-                strategy_name="EMA10_BREAKOUT"
-            )
-
-            print("ENTRY @", price)
-
-            trend = "Upside Breakout" if self.direction == "BUY" else "Downside Breakout"
-            instrument = "Buy Call Option" if self.direction == "BUY" else "Buy Put Option"
-
-            telegram_alert.send(
-                option_entry_alert(
-                    symbol=format_symbol(self.symbol),
-                    trend=trend,
-                    instrument=instrument,
-                    entry_price=price,
-                    capital=self.capital_used,
-                    target=self.target,
-                    sl=self.sl,
-                    time=entry_time
-                )
-            )
+            # testing 9
+            print(f"[ENTRY] Option @ {price}")
+            print(f"[TARGET] {self.target} | [SL] {self.sl}")
 
             return
 
-        # EXIT
+        # ================= EXIT =================
         if price >= self.target:
-            self._exit_trade("TARGET", price, ts)
+            self._exit_trade("TARGET", price)
 
         elif price <= self.sl:
-            self._exit_trade("SL", price, ts)
+            self._exit_trade("SL", price)
 
-    # ---------------------------------------------------
-    # EXIT
-    # ---------------------------------------------------
+    # =====================================================
+    # EXIT TRADE
+    # =====================================================
 
-    def _exit_trade(self, reason, price, ts):
+    def _exit_trade(self, reason, price):
 
         if not self.trade_active:
             return
+        
+        #testing 10
+        print(f"[EXIT] {reason} @ {price}")
 
+        # Reset trade flag
         self.trade_active = False
 
-        exit_time = epoch_to_ist(ts)
-
-        pnl_points = (
-            price - self.entry_price
-            if self.direction == "BUY"
-            else self.entry_price - price
-        )
-
-        pnl = pnl_points * self.lot_size
-
-        db_logger.log_paper_trade_exit(
-            symbol=self.symbol,
-            exit_price=price,
-            exit_time=exit_time,
-            pnl=pnl,
-            exit_reason=reason
-        )
-
-        print("EXIT:", reason, price)
-
-        telegram_alert.send(
-            option_exit_alert(
-                symbol=format_symbol(self.symbol),
-                trend="Trade Exit",
-                instrument="",
-                exit_price=price,
-                pnl=pnl,
-                reason=reason,
-                outcome="🟢 Profit" if pnl >= 0 else "🔴 Loss",
-                time=exit_time
-            )
-        )
-
-        # 🔥 Only unsubscribe — do NOT close socket
+        # Unsubscribe option data
         self.option_ws.unsubscribe()
 
-        state_machine.reset()
+        # 🔴 IMPORTANT: Reset strategy state
+        self.state_machine.reset()
+
+        # Reset engine variables
         self._reset_internal()
 
+    # =====================================================
+    # INTERNAL RESET
+    # =====================================================
+
     def _reset_internal(self):
+
         self.direction = None
         self.symbol = None
         self.entry_price = None
         self.target = None
         self.sl = None
-        self.entry_time = None
-        self.index_price = None
-        self.capital_used = None

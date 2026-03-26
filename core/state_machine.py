@@ -41,6 +41,10 @@ class StateMachine:
         telegram_alert.send(
             trigger_armed(direction, trigger_price, human_time )
         )
+        
+        # testing 5
+        print(f"[TRIGGER] {direction} @ {trigger_price}")
+
 
     def is_trigger_armed(self):
         return self.state == "TRIGGER_ARMED"

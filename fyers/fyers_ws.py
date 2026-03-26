@@ -21,6 +21,9 @@ def start(tick_handler):
             "symbol": message["symbol"]
         }
 
+        #Testing tick (1)
+        print(f"[TICK] {tick['symbol']} @ {tick['price']}")
+
         tick_handler.handle_tick(tick)
 
     def onerror(message):

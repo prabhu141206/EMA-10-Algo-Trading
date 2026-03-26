@@ -33,4 +33,3 @@ class TelegramAlertEngine:
 
 telegram_alert = TelegramAlertEngine()
 
-
