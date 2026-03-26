@@ -21,8 +21,6 @@ class StrategyInstance:
 
         self.candle_builder = CandleBuilder()
 
-        self.engine = VirtualTradeEngine(option_ws)
-
         # 🔴 FIX: pass state_machine into engine
         self.engine = VirtualTradeEngine(option_ws, self.state_machine)
         
