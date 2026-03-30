@@ -36,7 +36,7 @@ class StrategyInstance:
         candle_closed, closed_candle = self.candle_builder.add_tick(tick)
 
         #testing 4
-        print(f"[INSTANCE {self.symbol}] price={tick['price']}")
+        #print(f"[INSTANCE {self.symbol}] price={tick['price']}")
         
         # Candle close logic
         if candle_closed:

@@ -22,7 +22,7 @@ def start(tick_handler):
         }
 
         #Testing tick (1)
-        print(f"[TICK] {tick['symbol']} @ {tick['price']}")
+        #print(f"[TICK] {tick['symbol']} @ {tick['price']}")
 
         tick_handler.handle_tick(tick)
 

@@ -41,5 +41,5 @@ class StrategyManager:
             return
 
         #testing 3
-        print(f"[MANAGER] Routing to strategy: {symbol}")
+        #print(f"[MANAGER] Routing to strategy: {symbol}")
         strategy.handle_tick(tick)

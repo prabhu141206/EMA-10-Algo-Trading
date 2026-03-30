@@ -9,6 +9,6 @@ class TickHandler:
             tick["symbol"] = "NSE:NIFTY50-INDEX"
 
         # testing where actually this routes goes (2)
-        print(f"[ROUTE] → {tick['symbol']}")
+        #print(f"[ROUTE] → {tick['symbol']}")
 
         self.strategy_manager.route_tick(tick)
