@@ -12,6 +12,10 @@ class SignalEngine:
 
     def on_candle_close(self, candle: dict):
 
+        if self.state_machine.is_in_trade():
+            print("[SKIP] Already in trade → ignoring new setup")
+            return
+
         open_ = candle["open"]
         high = candle["high"]
         low = candle["low"]

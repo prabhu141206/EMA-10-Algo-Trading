@@ -57,7 +57,7 @@ class VirtualTradeEngine:
         print(f"[ENGINE] Selected Symbol: {self.symbol}")
 
         # Subscribe to option ticks
-        self.option_ws.subscribe(self.symbol, self)
+        self.option_ws.subscribe(self.symbol)
         
         #testing 7
         print(f"[ENGINE] Start trade → {direction}")

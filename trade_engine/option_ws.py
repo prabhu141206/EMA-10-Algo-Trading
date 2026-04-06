@@ -7,8 +7,7 @@ class OptionWebSocket:
 
     def __init__(self, access_token):
         self.active = True
-        self.current_symbol = None
-        self.engine = None
+        self.active_trades = {}  #symbol -> engine
         self.reconnect_attempts = 0
         self.max_reconnect_attempts = 3
         self.reconnect_cooldown = 10
@@ -33,11 +32,10 @@ class OptionWebSocket:
     def subscribe(self, symbol, engine):
         print(f"[WS] Subscribing to {symbol}")
 
-        self.current_symbol = symbol
-        self.engine = engine
+        self.active_trades[symbol] = engine
 
         print(f"[OPTION WS] Subscribing → {symbol}")
-        print(f"[OPTION WS] Engine attached → {engine._class__.__name__}")
+        print(f"[OPTION WS] Engine attached → {engine.__class__.__name__}")
 
         self.fyers.subscribe(
             symbol_tickers=[symbol],
@@ -46,7 +44,7 @@ class OptionWebSocket:
         )
 
     # Unsubscribe on trade exit
-    def unsubscribe(self):
+    def unsubscribe(self, symbol):
         if not self.current_symbol:
             return
 
@@ -60,8 +58,8 @@ class OptionWebSocket:
         except:
             pass
 
-        self.current_symbol = None
-        self.engine = None
+        if symbol in self.active_trades:
+            del self.active_trades[symbol]
 
     def onopen(self):
         print("[WS] Connected successfully.")
@@ -79,8 +77,9 @@ class OptionWebSocket:
         #testing 8
         print(f"[OPTION TICK] {ticker} ltp={ltp}")
 
-        if not self.engine:
-            print("[OPTION WS] No engine attached — tick ignored")
+        engine = self.active_trades.get(ticker)
+        if not engine:
+            print(f"[OPTION WS] No engine for {ticker}")
             return
         
         self.engine.on_option_tick(ltp, bid, ask, ts)

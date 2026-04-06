@@ -27,7 +27,7 @@ class BreakoutWatcher:
         trigger_price = self.state_machine.trigger_price
         
         #testing 6
-        print(f"[BREAKOUT] {direction} @ {price}")
+        #print(f"[BREAKOUT] {direction} @ {price}")
         
         # ================= BREAKOUT LOGIC =================
         if direction == "BUY" and price >= trigger_price:
