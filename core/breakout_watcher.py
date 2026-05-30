@@ -1,4 +1,4 @@
-from core.state_machine import state_machine
+
 from utils.time_utils import epoch_to_ist
 from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trade_entry

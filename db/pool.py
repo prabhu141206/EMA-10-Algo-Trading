@@ -1,4 +1,5 @@
 from psycopg2.pool import SimpleConnectionPool
+from config.settings import DATABASE_URL
 import os
 import time
 
@@ -10,7 +11,7 @@ def init_pool():
     if pool:
         return
 
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    #DATABASE_URL = os.getenv("DATABASE_URL")
 
     # retry logic (VERY IMPORTANT for Railway)
     for _ in range(10):

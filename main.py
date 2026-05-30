@@ -39,7 +39,6 @@ from utils.time_utils import wait_until_market_open
 # TRADING COMPONENTS
 # =========================================================
 from trade_engine.option_ws import OptionWebSocket
-from strategy.strategy_manager import StrategyManager
 from core.tick_handler import TickHandler
 
 
@@ -92,26 +91,8 @@ def main():
     option_ws.connect()
 
 
-    # =====================================================
-    # 6️⃣ CREATE STRATEGY MANAGER
-    # Responsible for managing ALL strategies
-    # =====================================================
-    strategy_manager = StrategyManager(option_ws)
 
-
-    # =====================================================
-    # 7️⃣ REGISTER STRATEGIES
-    # Add all index symbols you want to trade
-    # =====================================================
-    strategy_manager.add_strategy("NSE:NIFTY50-INDEX")
-    # strategy_manager.add_strategy("BANKNIFTY")  # future scaling
-
-
-    # =====================================================
-    # 8️⃣ CREATE TICK HANDLER (ROUTER ONLY)
-    # This will route incoming ticks to correct strategy
-    # =====================================================
-    tick_handler = TickHandler(strategy_manager)
+    tick_handler = TickHandler(option_ws)
 
 
     # =====================================================
