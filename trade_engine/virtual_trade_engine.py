@@ -3,7 +3,10 @@
 # =========================================================
 
 from options.symbol_builder import build_option_symbol
-
+from alerts.telegram_alert import telegram_alert
+from alerts.message_templates import trade_entry, option_entry_alert, option_exit_alert
+from utils.time_utils import epoch_to_ist
+import time
 
 class VirtualTradeEngine:
 
@@ -80,12 +83,73 @@ class VirtualTradeEngine:
             self.trade_active = True
 
             self.entry_price = price
-            self.target = price + 20
-            self.sl = price - 10
+
+            # =====================================
+            # TARGET / SL
+            # =====================================
+
+            if self.direction == "BUY":
+
+                self.target = (
+                    self.entry_price + 20
+                )
+
+                self.sl = (
+                    self.entry_price - 10
+                )
+
+            else:
+
+                self.target = (
+                    self.entry_price - 20
+                )
+
+                self.sl = (
+                    self.entry_price + 10
+                )
 
             # testing 9
             print(f"[ENTRY] Option @ {price}")
             print(f"[TARGET] {self.target} | [SL] {self.sl}")
+
+
+            # =====================================
+            # TELEGRAM ENTRY ALERT
+            # =====================================
+
+            capital_required = (
+                self.entry_price * 65
+            )
+
+            telegram_alert.send(
+
+                option_entry_alert(
+
+                    symbol=self.option_symbol,
+
+                    trend=(
+                        "Upside Breakout"
+                        if self.direction == "BUY"
+                        else "Downside Breakout"
+                    ),
+
+                    instrument=(
+                        "Buy Call Option"
+                        if self.direction == "BUY"
+                        else "Buy Put Option"
+                    ),
+
+                    entry_price=self.entry_price,
+
+                    capital=capital_required,
+
+                    target=self.target,
+
+                    sl=self.sl,
+
+                    time=epoch_to_ist(ts)
+                )
+            )
 
             return
 
@@ -113,6 +177,46 @@ class VirtualTradeEngine:
 
         # Unsubscribe option data
         self.option_ws.unsubscribe()
+
+        # =====================================
+        # TELEGRAM EXIT ALERT
+        # =====================================
+
+        telegram_alert.send(
+
+            option_exit_alert(
+
+                symbol=self.option_symbol,
+
+                trend=(
+                    "Upside Breakout"
+                    if self.direction == "BUY"
+                    else "Downside Breakout"
+                ),
+
+                instrument=(
+                    "Buy Call Option"
+                    if self.direction == "BUY"
+                    else "Buy Put Option"
+                ),
+
+                exit_price=price,
+
+                pnl=price,
+
+                reason=reason,
+
+                outcome=(
+                    "Profit"
+                    if price > 0
+                    else "Loss"
+                ),
+
+                time=epoch_to_ist(time.time())
+            )
+        )
+
+        
 
         # 🔴 IMPORTANT: Reset strategy state
         self.state_machine.reset()

@@ -210,3 +210,46 @@ def option_exit_alert(symbol, trend, instrument, exit_price, pnl, reason, outcom
         ⚖️ Outcome: {outcome}
         ⏰ Time: {time}
         """
+
+
+def option_subscription_alert(
+    symbol,
+    trend,
+    action,
+    time
+):
+
+    return f"""
+
+        📡 OPTION SUBSCRIBED
+
+        Instrument : {symbol}
+
+        Signal     : {trend}
+
+        Action     : {action}
+
+        Time       : {time}
+
+        """
+
+
+def option_unsubscription_alert(
+    symbol,
+    reason,
+    time
+):
+
+    return f"""
+
+📴 OPTION UNSUBSCRIBED
+
+Instrument : {symbol}
+
+Reason     : {reason}
+
+Status     : Feed Disconnected
+
+Time       : {time}
+
+"""

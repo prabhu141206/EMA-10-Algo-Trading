@@ -31,13 +31,14 @@ class TickHandler:
             self.state_machine
         )
 
+        self.first_candle_completed = False
     # ============================================
     # MAIN TICK FLOW
     # ============================================
 
     def handle_tick(self, tick):
 
-        print(f"[TICK] {tick['price']}")
+        #print(f"[TICK] {tick['price']}")
 
         candle_closed, closed_candle = (
             self.candle_builder.add_tick(tick)
@@ -49,17 +50,62 @@ class TickHandler:
 
         if candle_closed:
 
-            print("[CANDLE CLOSED]")
+            # =====================================
+            # INITIAL SYNCHRONIZATION
+            # =====================================
+
+            if not self.first_candle_completed:
+
+                self.first_candle_completed = True
+
+                print(
+                    "[CANDLE] Synchronized "
+                    "candle formation started"
+                )
+
+                return
+
+            # =====================================
+            # NORMAL CANDLE CLOSE
+            # =====================================
+
+            print("\n" + "=" * 60)
+            print(
+                f"[CANDLE CLOSED] "
+                f"O={closed_candle['open']} "
+                f"H={closed_candle['high']} "
+                f"L={closed_candle['low']} "
+                f"C={closed_candle['close']}"
+            )
 
             if self.state_machine.is_trigger_armed():
+
                 self.state_machine.expire_trigger()
 
             self.signal_engine.on_candle_close(
                 closed_candle
             )
 
-            return
+            if self.state_machine.is_trigger_armed():
 
+                print(
+                    f"[TRIGGER FORMED] "
+                    f"{self.state_machine.direction} "
+                    f"@ {self.state_machine.trigger_price}"
+                )
+
+            else:
+
+                print("[TRIGGER] No setup")
+
+            print(
+                f"[STATE] "
+                f"{self.state_machine.state}"
+            )
+
+            print("=" * 60)
+
+            return
         # ----------------------------------------
         # Live Breakout Check
         # ----------------------------------------

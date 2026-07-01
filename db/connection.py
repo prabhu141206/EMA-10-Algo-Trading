@@ -4,8 +4,9 @@
 import psycopg2
 import time
 from config.settings import DATABASE_URL
+import os
 
-
+'''
 def create_connection():
     for attempt in range(5):  # retry 5 times
         try:
@@ -21,7 +22,9 @@ def create_connection():
 
 '''
 
-        use for local system 
+        #use for local system 
+
+
 def create_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -30,4 +33,4 @@ def create_connection():
         password=os.getenv("DB_PASS"),
         port=os.getenv("DB_PORT")
     )
- '''
+

@@ -1,6 +1,6 @@
 from core.state_machine import state_machine
 from utils.time_utils import epoch_to_ist
-
+from datetime import datetime, timedelta
 
 class CandleBuilder:
     def __init__(self, timeframe_minutes: int = 5):
@@ -10,6 +10,19 @@ class CandleBuilder:
         self.tf_seconds = timeframe_minutes * 60
         self.current_bucket = None
         self.current_candle = None
+
+        now = datetime.now()
+
+        next_boundary = (
+            now.replace(second=0, microsecond=0)
+            + timedelta(minutes=5 - (now.minute % 5))
+        )
+
+        print(
+            f"[CANDLE] Waiting for next "
+            f"5-minute boundary "
+            f"({next_boundary.strftime('%H:%M')})"
+        )
 
     def _get_bucket_start(self, ts: int) -> int:
         return ts - (ts % self.tf_seconds)

@@ -58,13 +58,4 @@ class BreakoutWatcher:
             candle_time=ts
         )
 
-        # Telegram alert
-        telegram_alert.send(
-            trade_entry(
-                direction,
-                price,
-                self.state_machine.trigger_price,
-                price + 20 if direction == "BUY" else price - 20,
-                epoch_to_ist(ts)
-            )
-        )
+  

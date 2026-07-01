@@ -1,5 +1,15 @@
 from fyers_apiv3.FyersWebsocket.tbt_ws import FyersTbtSocket, SubscriptionModes
 from utils.time_utils import is_market_open
+from alerts.telegram_alert import telegram_alert
+
+from alerts.message_templates import (
+    option_subscription_alert, option_unsubscription_alert
+)
+
+from utils.time_utils import (
+    epoch_to_ist
+)
+
 import time
 
 
@@ -43,6 +53,24 @@ class OptionWebSocket:
             mode=SubscriptionModes.DEPTH
         )
 
+        telegram_alert.send(
+
+            option_subscription_alert(
+
+                symbol=symbol,
+
+                trend=engine.direction,
+
+                action=(
+                    "Buy Call Option"
+                    if engine.direction == "BUY"
+                    else "Buy Put Option"
+                ),
+
+                time=epoch_to_ist(time.time())
+            )
+        )
+
     # Unsubscribe on trade exit
     def unsubscribe(self, symbol):
         if not self.current_symbol:
@@ -54,6 +82,18 @@ class OptionWebSocket:
             self.fyers.unsubscribe(
                 symbol_tickers=[self.current_symbol],
                 channelNo='1'
+            )
+
+            telegram_alert.send(
+
+                option_unsubscription_alert(
+
+                    symbol=self.current_symbol,
+
+                    reason="Trade Completed",
+
+                    time=epoch_to_ist(time.time())
+                )
             )
         except:
             pass
@@ -75,7 +115,7 @@ class OptionWebSocket:
         ts = message.timestamp
 
         #testing 8
-        print(f"[OPTION TICK] {ticker} ltp={ltp}")
+        #print(f"[OPTION TICK] {ticker} ltp={ltp}")
 
         engine = self.active_trades.get(ticker)
         if not engine:

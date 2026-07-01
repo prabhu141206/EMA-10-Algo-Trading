@@ -21,7 +21,7 @@ class TelegramAlertEngine:
             
             try :
 
-                r = requests.post(url, data=data, timeout=5)  
+                r = requests.post(url, data=data, timeout=15)  
                 if r.status_code != 200:
                     print("[TELEGRAM FAILED]", r.text)
                     
