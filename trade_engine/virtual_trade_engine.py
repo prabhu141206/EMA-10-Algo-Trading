@@ -7,6 +7,7 @@ from alerts.telegram_alert import telegram_alert
 from alerts.message_templates import trade_entry, option_entry_alert, option_exit_alert
 from utils.time_utils import epoch_to_ist
 import time
+#from System.shutdown_manager import shutdown_manager
 
 class VirtualTradeEngine:
 
@@ -57,10 +58,12 @@ class VirtualTradeEngine:
             direction=direction
         )
 
+        # Subscribe to option ticks
+        self.option_ws.subscribe(symbol=self.symbol, engine=self)
+
         print(f"[ENGINE] Selected Symbol: {self.symbol}")
 
-        # Subscribe to option ticks
-        self.option_ws.subscribe(self.symbol)
+        
         
         #testing 7
         print(f"[ENGINE] Start trade → {direction}")
@@ -101,11 +104,11 @@ class VirtualTradeEngine:
             else:
 
                 self.target = (
-                    self.entry_price - 20
+                    self.entry_price + 20
                 )
 
                 self.sl = (
-                    self.entry_price + 10
+                    self.entry_price - 10
                 )
 
             # testing 9
@@ -223,6 +226,10 @@ class VirtualTradeEngine:
 
         # Reset engine variables
         self._reset_internal()
+
+        #Check if shutdown is pending
+
+        
 
     # =====================================================
     # INTERNAL RESET

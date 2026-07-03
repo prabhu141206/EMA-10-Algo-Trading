@@ -54,3 +54,5 @@ def start(tick_handler):
     )
 
     fyers.connect()
+
+    #fyers.close_connection()

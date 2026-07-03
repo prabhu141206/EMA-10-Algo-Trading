@@ -8,7 +8,8 @@ class SignalEngine:
         tied to its own state machine.
         """
         self.state_machine = state_machine
-        self.prev_ema = None  # EMA of previous candle
+        #self.prev_ema = None  # EMA of previous candle
+        self.prev_ema = ema_10.get_initial_value()  # Initialize with the current EMA value
 
     def on_candle_close(self, candle: dict):
 
@@ -26,9 +27,25 @@ class SignalEngine:
         candle["ema"] = ema_now
 
         # First candle → no comparison possible
-        if self.prev_ema is None:
-            self.prev_ema = ema_now
-            return
+        #if self.prev_ema is None:
+            #self.prev_ema = ema_now
+            #return
+        
+
+        # Print debug information for the current candle and EMA comparison
+        print(
+                f"""
+            BUY:
+            close>ema : {close > self.prev_ema}
+            close<open: {close < open_}
+            low>ema   : {low > self.prev_ema}
+
+            SELL:
+            close<ema : {close < self.prev_ema}
+            close>open: {close > open_}
+            high<ema  : {high < self.prev_ema}
+            """
+        )
 
         # ================= BUY CONDITION =================
         if (
@@ -54,5 +71,6 @@ class SignalEngine:
                 trigger_time=candle["timestamp"]
             )
 
+        
         # Store EMA for next candle
         self.prev_ema = ema_now

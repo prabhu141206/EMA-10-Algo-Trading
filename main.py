@@ -6,6 +6,8 @@
 # INDEX WEBSOCKET
 # Starts live index tick stream
 # =========================================================
+import time
+
 from fyers.fyers_ws import start as start_index_ws
 
 
@@ -32,7 +34,7 @@ from db.init_tables import init_tables
 # =========================================================
 # TIME CONTROL (WAIT UNTIL MARKET OPEN)
 # =========================================================
-from utils.time_utils import wait_until_market_open
+from utils.Market_calender import market_status
 
 
 # =========================================================
@@ -49,6 +51,31 @@ from config.settings import ACCESS_TOKEN
 
 
 def main():
+
+
+    # =====================================================
+    # 0 CHECK MARKET STATUS
+    # Waits until market is open before starting trading logic
+    # Prevents Unnecessary system running during market closed hours
+    # =====================================================
+
+    market_live = market_status.is_market_live()
+
+    if not market_live: 
+        print("\n🔔 Market Status: 🔴 CLOSED.\nWaiting for market to open...\n")
+
+        # Get current time, next trading session time, and seconds until market opens
+        current_time, next_open_time, seconds_to_open = market_status.get_next_trading_session_info()
+        print(f"🕒 Current Time: {current_time}")
+        print(f"⏳ Next Trading Session: {next_open_time}")
+        print(f"⏰ Market opens: {seconds_to_open} seconds\n")
+
+        time.sleep(int(seconds_to_open))  # Sleep for the remaining seconds until market opens
+
+    # Market is now open, proceed with the rest of the trading logic and run the system
+    print("\n 🔔 Market Status: 🟢 OPEN.\nStarting trading system...\n")
+
+        
 
     # =====================================================
     # 1️⃣ INITIALIZE DATABASE
@@ -93,13 +120,10 @@ def main():
 
 
     tick_handler = TickHandler(option_ws)
+    
 
 
-    # =====================================================
-    # 9️⃣ WAIT UNTIL MARKET OPEN
-    # Prevents pre-market noise from corrupting system
-    # =====================================================
-    wait_until_market_open()
+   
 
 
     # =====================================================

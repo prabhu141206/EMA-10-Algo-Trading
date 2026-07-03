@@ -1,13 +1,10 @@
-from fyers_apiv3.FyersWebsocket.tbt_ws import FyersTbtSocket, SubscriptionModes
-from utils.time_utils import is_market_open
-from alerts.telegram_alert import telegram_alert
-
-from alerts.message_templates import (
-    option_subscription_alert, option_unsubscription_alert
+from fyers_apiv3.FyersWebsocket.tbt_ws import (
+    FyersTbtSocket,
+    SubscriptionModes
 )
 
 from utils.time_utils import (
-    epoch_to_ist
+    is_market_open
 )
 
 import time
@@ -16,8 +13,13 @@ import time
 class OptionWebSocket:
 
     def __init__(self, access_token):
+
         self.active = True
-        self.active_trades = {}  #symbol -> engine
+
+        # Isolated architecture
+        self.current_symbol = None
+        self.engine = None
+
         self.reconnect_attempts = 0
         self.max_reconnect_attempts = 3
         self.reconnect_cooldown = 10
@@ -33,100 +35,132 @@ class OptionWebSocket:
             on_error_message=self.onerror_message
         )
 
-    # Connect once at system start
+    # ==========================================
+    # CONNECT
+    # ==========================================
+
     def connect(self):
-        print("[WS] Starting persistent option socket...")
+
+        print(
+            "[WS] Starting persistent "
+            "option socket..."
+        )
+
         self.fyers.connect()
 
-    # Subscribe dynamically when trade starts
-    def subscribe(self, symbol, engine):
-        print(f"[WS] Subscribing to {symbol}")
+    # ==========================================
+    # SUBSCRIBE
+    # ==========================================
 
-        self.active_trades[symbol] = engine
+    def subscribe(
+        self,
+        symbol,
+        engine
+    ):
 
-        print(f"[OPTION WS] Subscribing → {symbol}")
-        print(f"[OPTION WS] Engine attached → {engine.__class__.__name__}")
+        self.current_symbol = symbol
+        self.engine = engine
+
+        print(
+            f"[WS] Subscribing → "
+            f"{symbol}"
+        )
 
         self.fyers.subscribe(
             symbol_tickers=[symbol],
-            channelNo='1',
+            channelNo="1",
             mode=SubscriptionModes.DEPTH
         )
 
-        telegram_alert.send(
+    # ==========================================
+    # UNSUBSCRIBE
+    # ==========================================
 
-            option_subscription_alert(
+    def unsubscribe(self):
 
-                symbol=symbol,
-
-                trend=engine.direction,
-
-                action=(
-                    "Buy Call Option"
-                    if engine.direction == "BUY"
-                    else "Buy Put Option"
-                ),
-
-                time=epoch_to_ist(time.time())
-            )
-        )
-
-    # Unsubscribe on trade exit
-    def unsubscribe(self, symbol):
         if not self.current_symbol:
             return
 
-        print(f"[WS] Unsubscribing {self.current_symbol}")
+        print(
+            f"[WS] Unsubscribing → "
+            f"{self.current_symbol}"
+        )
 
         try:
+
             self.fyers.unsubscribe(
-                symbol_tickers=[self.current_symbol],
-                channelNo='1'
+                symbol_tickers=[
+                    self.current_symbol
+                ],
+                channelNo="1"
             )
 
-            telegram_alert.send(
+        except Exception as e:
 
-                option_unsubscription_alert(
-
-                    symbol=self.current_symbol,
-
-                    reason="Trade Completed",
-
-                    time=epoch_to_ist(time.time())
-                )
+            print(
+                f"[WS] Unsubscribe Error: "
+                f"{e}"
             )
-        except:
-            pass
 
-        if symbol in self.active_trades:
-            del self.active_trades[symbol]
+        self.current_symbol = None
+        self.engine = None
+
+    # ==========================================
+    # OPEN
+    # ==========================================
 
     def onopen(self):
-        print("[WS] Connected successfully.")
+
+        print(
+            "[WS] Connected successfully."
+        )
+
         self.reconnect_attempts = 0
+
         self.fyers.keep_running()
 
-    def on_depth_update(self, ticker, message):
-        
+    # ==========================================
+    # OPTION TICK
+    # ==========================================
 
-        ltp = (message.bidprice[0] + message.askprice[0]) / 2
+    def on_depth_update(
+        self,
+        ticker,
+        message
+    ):
+
+        if not self.engine:
+            return
+
+        ltp = (
+            message.bidprice[0]
+            +
+            message.askprice[0]
+        ) / 2
+
         bid = message.bidprice[0]
+
         ask = message.askprice[0]
+
         ts = message.timestamp
 
-        #testing 8
-        #print(f"[OPTION TICK] {ticker} ltp={ltp}")
+        self.engine.on_option_tick(
+            ltp,
+            bid,
+            ask,
+            ts
+        )
 
-        engine = self.active_trades.get(ticker)
-        if not engine:
-            print(f"[OPTION WS] No engine for {ticker}")
-            return
-        
-        self.engine.on_option_tick(ltp, bid, ask, ts)
-        print("option tick received")
+    # ==========================================
+    # ERROR
+    # ==========================================
 
     def onerror(self, msg):
-        print("WS Error:", msg)
+
+        print(
+            "WS Error:",
+            msg
+        )
 
         if not self.active:
             return
@@ -134,27 +168,69 @@ class OptionWebSocket:
         now = int(time.time())
 
         if not is_market_open(now):
-            print("[WS] Market closed. Stopping reconnect.")
+
+            print(
+                "[WS] Market closed."
+            )
+
             self.active = False
             return
 
-        # Stop completely on rate limit
         if "429" in str(msg):
-            print("[WS] Rate limited. Stopping reconnect.")
+
+            print(
+                "[WS] Rate limited."
+            )
+
             self.active = False
             return
 
-        if self.reconnect_attempts < self.max_reconnect_attempts:
+        if (
+            self.reconnect_attempts
+            <
+            self.max_reconnect_attempts
+        ):
+
             self.reconnect_attempts += 1
-            print(f"[WS] Reconnecting ({self.reconnect_attempts})...")
-            time.sleep(self.reconnect_cooldown)
+
+            print(
+                f"[WS] Reconnecting "
+                f"({self.reconnect_attempts})"
+            )
+
+            time.sleep(
+                self.reconnect_cooldown
+            )
+
             self.connect()
+
         else:
-            print("[WS] Max reconnect attempts reached.")
+
+            print(
+                "[WS] Max reconnect "
+                "attempts reached."
+            )
+
             self.active = False
+
+    # ==========================================
+    # CLOSE
+    # ==========================================
 
     def onclose(self, msg):
-        print("WS Closed:", msg)
+
+        print(
+            "WS Closed:",
+            msg
+        )
+
+    # ==========================================
+    # SERVER ERROR
+    # ==========================================
 
     def onerror_message(self, msg):
-        print("WS Server Error:", msg)
+
+        print(
+            "WS Server Error:",
+            msg
+        )
