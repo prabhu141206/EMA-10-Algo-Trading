@@ -31,8 +31,35 @@ def init_tables():
         );
     """)
 
+
+    # =========================================================
+    # BROKER TOKEN TABLE
+    # =========================================================
+
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS broker_tokens (
+
+            broker_name VARCHAR(50) PRIMARY KEY,
+
+            access_token TEXT NOT NULL,
+
+            refresh_token TEXT,
+
+            expires_at TIMESTAMP,
+
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+        );
+    """)
+
     
 
     conn.commit()
     cursor.close()
     conn.close()
+
+
+
+
+

@@ -52,6 +52,9 @@ class BreakoutWatcher:
         self.state_machine.enter_trade()
 
         # Start trade
+
+        print("Breakout watcher")
+        print('[DEBUG 1] called start_trade()')
         self.engine.start_trade(
             direction=direction,
             spot_price=price,

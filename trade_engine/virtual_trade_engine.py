@@ -51,7 +51,7 @@ class VirtualTradeEngine:
             return
 
         self.direction = direction
-
+        print("[DEBUG 2] START_TRADE() entered")
         # 🔴 CRITICAL: Symbol creation MUST exist
         self.symbol = build_option_symbol(
             index_price=spot_price,
@@ -73,7 +73,7 @@ class VirtualTradeEngine:
     # OPTION TICK (called from OptionWebSocket)
     # =====================================================
 
-    def on_option_tick(self, price, bid, ask, ts):
+    def on_option_tick(self, price,ts):
 
         # Ignore if direction not set (safety)
         if not self.direction:
