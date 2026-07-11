@@ -1,6 +1,6 @@
 from psycopg2.pool import SimpleConnectionPool
 from config.settings import DATABASE_URL
-import os
+
 import time
 
 pool = None
@@ -37,3 +37,23 @@ def get_conn():
 
 def release_conn(conn):
     pool.putconn(conn)
+
+
+# =====================================================
+# CLOSE DATABASE POOL
+# =====================================================
+
+def close_pool():
+
+    global pool
+
+    if pool is None:
+        return
+
+    print("[DB] Closing connection pool...")
+
+    pool.closeall()
+
+    pool = None
+
+    print("[DB] Connection pool closed.")
