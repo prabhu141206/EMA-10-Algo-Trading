@@ -16,9 +16,9 @@ from logzero import logger
 
 class SpotWebSocket:
 
-    def __init__(self, auth, tick_handler):
+    def __init__(self, session, tick_handler):
 
-        self.auth = auth
+        self.session = session
         self.tick_handler = tick_handler
 
         self.sws = None
@@ -45,17 +45,14 @@ class SpotWebSocket:
 
     def connect(self):
 
-        AUTH_TOKEN = self.auth.get_access_token()
-        API_KEY = self.auth.get_api_key()
-        CLIENT_CODE = self.auth.get_client_id()
-        FEED_TOKEN = self.auth.get_feed_token()
+        """Initialize and start the WebSocket connection."""
+        AUTH_TOKEN = self.session["auth_token"]
+        API_KEY = self.session["api_key"]
+        CLIENT_CODE = self.session["client_id"]
+        FEED_TOKEN = self.session["feed_token"]
 
-        self.sws = SmartWebSocketV2(
-            AUTH_TOKEN,
-            API_KEY,
-            CLIENT_CODE,
-            FEED_TOKEN
-        )
+        # Initialize SmartWebSocketV2
+        self.sws = SmartWebSocketV2(AUTH_TOKEN, API_KEY, CLIENT_CODE, FEED_TOKEN)
 
         self._setup_callbacks()
 

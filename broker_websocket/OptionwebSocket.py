@@ -6,11 +6,11 @@ from .token_resolver import token_resolver
 class OptionWebsocket:
 
 
-    def __init__(self, auth):
+    def __init__(self, session):
 
         """Initialize the WebSocket handler with auth and tick handler objects."""
         self.connected = False
-        self.auth = auth
+        self.session = session
         self.sws = None
         self.correlation_id = "option_ws"
         self.engine = None
@@ -131,10 +131,10 @@ class OptionWebsocket:
     def connect(self):
 
         """Initialize and start the WebSocket connection."""
-        AUTH_TOKEN = self.auth.get_access_token()
-        API_KEY = self.auth.get_api_key()
-        CLIENT_CODE = self.auth.get_client_id()
-        FEED_TOKEN = self.auth.get_feed_token()
+        AUTH_TOKEN = self.session["auth_token"]
+        API_KEY = self.session["api_key"]
+        CLIENT_CODE = self.session["client_id"]
+        FEED_TOKEN = self.session["feed_token"]
 
         # Initialize SmartWebSocketV2
         self.sws = SmartWebSocketV2(AUTH_TOKEN, API_KEY, CLIENT_CODE, FEED_TOKEN)

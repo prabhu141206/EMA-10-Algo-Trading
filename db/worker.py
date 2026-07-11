@@ -4,7 +4,7 @@ from db.pool import get_conn, release_conn
 
 
 def start_db_worker():
-    print("DB Worker Started")
+    print("[DB] Worker Started")
 
     while True:
         try:
