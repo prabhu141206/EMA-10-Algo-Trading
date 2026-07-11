@@ -170,12 +170,7 @@ class StartupManager:
         self._initial_msg()
         
         
-
-        # print()
-        # print(self.session, '\n\n')
-
-
-
+      
         print("Starting EMA Trend Algo...")
         print("Waiting for SmartAPI ticks...\n")
 

@@ -81,7 +81,7 @@ class VirtualTradeEngine:
 
         # ================= ENTRY =================
         if not self.trade_active:
-
+            
             # First tick = entry
             self.trade_active = True
 

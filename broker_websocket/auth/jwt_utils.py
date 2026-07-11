@@ -11,7 +11,7 @@
 
 import base64
 import json
-from datetime import datetime
+
 
 
 class JWTUtils:
@@ -43,18 +43,3 @@ class JWTUtils:
 
             return None
 
-    # =====================================================
-    # CHECK EXPIRY
-    # =====================================================
-
-    # @staticmethod
-    # def is_expired(jwt_token):
-
-    #     expiry = JWTUtils.get_expiry(jwt_token)
-
-    #     if expiry is None:
-    #         return True
-
-    #     current_time = datetime.utcnow().timestamp()
-
-    #     return current_time >= expiry

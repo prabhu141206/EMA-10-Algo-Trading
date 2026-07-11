@@ -16,7 +16,7 @@ class TokenResolver:
 
         #symbol = "NIFTY14JUL2624050CE"
         token = self.df[self.df['symbol'] == symbol]['token'].values[0]
-
+        return token
 
 token_resolver = TokenResolver()
 

@@ -16,16 +16,11 @@
 #
 # =========================================================
 
-import os
-from dotenv import load_dotenv
+
 
 from broker_websocket.auth.auth_manager import AuthManager
+from config.settings import CLIENT_ID,PASSWORD,API_KEY,TOTP_SECRET
 
-# =========================================================
-# LOAD ENVIRONMENT VARIABLES
-# =========================================================
-
-load_dotenv()
 
 # =========================================================
 # CREATE SINGLE AUTH INSTANCE
@@ -33,12 +28,9 @@ load_dotenv()
 
 auth = AuthManager(
 
-    api_key=os.getenv("API_KEY"),
-
-    client_id=os.getenv("CLIENT_ID"),
-
-    password=os.getenv("PASSWORD"),
-
-    totp_secret=os.getenv("TOTP_SECRET")
+    api_key=API_KEY,
+    client_id=CLIENT_ID,
+    password= PASSWORD,
+    totp_secret= TOTP_SECRET
 
 )
