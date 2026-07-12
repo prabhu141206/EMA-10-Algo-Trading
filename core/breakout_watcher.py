@@ -31,12 +31,12 @@ class BreakoutWatcher:
         
         # ================= BREAKOUT LOGIC =================
         if direction == "BUY" and price >= trigger_price:
-            self._fire_entry(direction, price, ts)
+            self._fire_entry(direction, trigger_price, ts)
 
         elif direction == "SELL" and price <= trigger_price:
-            self._fire_entry(direction, price, ts)
+            self._fire_entry(direction, trigger_price, ts)
 
-    def _fire_entry(self, direction, price, ts):
+    def _fire_entry(self, direction, trigger_price, ts):
 
         # Protection: already in trade
         if self.state_machine.is_in_trade():
@@ -46,7 +46,7 @@ class BreakoutWatcher:
         if self.engine.trade_active:
             return
 
-        print(f"[ENTRY] 🚀 {direction} breakout at {price}")
+        print(f"[ENTRY] 🚀 {direction} breakout at {trigger_price}")
 
         # Update state
         self.state_machine.enter_trade()
@@ -57,7 +57,7 @@ class BreakoutWatcher:
         print('[DEBUG 1] called start_trade()')
         self.engine.start_trade(
             direction=direction,
-            spot_price=price,
+            breakout_price=trigger_price,
             candle_time=ts
         )
 
