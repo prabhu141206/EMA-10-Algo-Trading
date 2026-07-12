@@ -68,6 +68,12 @@ class VirtualTradeEngine:
 
         self.strategy_name = "EMA 10 Strategy"
 
+        # =====================================================
+        # LIVE OPTION DATA
+        # =====================================================
+
+        self.last_option_price = None
+
     # =====================================================
     # START TRADE (called from BreakoutWatcher)
     # =====================================================
@@ -117,6 +123,9 @@ class VirtualTradeEngine:
     # =====================================================
 
     def on_option_tick(self, price, ts):
+
+        # Always keep the latest option price
+        self.last_option_price = price
 
         # Safety
         if not self.direction:
@@ -230,6 +239,32 @@ class VirtualTradeEngine:
         elif price <= self.sl:
 
             self._exit_trade("SL", price)
+
+
+
+    # =====================================================
+    # FORCE EXIT (Called by ShutdownManager)
+    # =====================================================
+
+    def force_exit(self):
+
+        # No active trade
+        if not self.trade_active:
+            return
+
+        # Safety
+        if self.last_option_price is None:
+            print("[ENGINE] Force exit failed: No option price available.")
+            return
+
+        print("[SHUTDOWN] Market closed. Initiating forced trade exit...")
+
+        self._exit_trade(
+            reason="FORCED_MARKET_CLOSE",
+            price=self.last_option_price
+        )
+
+
 
     # =====================================================
     # EXIT TRADE

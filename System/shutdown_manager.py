@@ -235,8 +235,16 @@ class ShutdownManager:
 
     def handle_in_trade_state(self):
 
-        print("[SHUTDOWN] Active trade detected.")
-        print("[SHUTDOWN] Waiting for trade completion.")
+        print("[SHUTDOWN] Strategy State : IN_TRADE")
+        print("[SHUTDOWN] Initiating forced trade exit...")
+
+        self.engine.force_exit()
+
+        print("[SHUTDOWN] Trade closed successfully.")
+
+        self.shutdown()
+
+    
 
 
 
