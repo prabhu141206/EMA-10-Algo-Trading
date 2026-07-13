@@ -23,7 +23,7 @@ TOTP_SECRET = os.getenv("TOTP_SECRET")
 # DATABASE
 # ==========================================================
 
-# DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 # ==========================================================
