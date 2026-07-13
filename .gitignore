@@ -5,6 +5,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Authentication
+tokens.json
+
+
 # -------------------------
 # Virtual environment
 # -------------------------
