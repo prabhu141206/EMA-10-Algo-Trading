@@ -1,9 +1,9 @@
 from psycopg2.pool import SimpleConnectionPool
-from config.settings import DATABASE_URL
-
+import os
 import time
 
 pool = None
+
 
 def init_pool():
     global pool
@@ -11,23 +11,26 @@ def init_pool():
     if pool:
         return
 
-    #DATABASE_URL = os.getenv("DATABASE_URL")
-
-    # retry logic (VERY IMPORTANT for Railway)
-    for _ in range(10):
+    for _ in range(5):
         try:
             pool = SimpleConnectionPool(
-                1,
-                5,
-                dsn=DATABASE_URL
+                minconn=1,
+                maxconn=5,
+                host=os.getenv("DB_HOST"),
+                database=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASS"),
+                port=os.getenv("DB_PORT")
             )
+
             print("[DB] Pool created")
             return
-        except Exception as e:
-            print("[DB] Waiting for DB...", e)
-            time.sleep(3)
 
-    raise RuntimeError("DB connection failed after retries")
+        except Exception as e:
+            print(f"[DB] Waiting for DB... {e}")
+            time.sleep(2)
+
+    raise RuntimeError("Failed to create DB pool")
 
 
 def get_conn():
@@ -36,24 +39,17 @@ def get_conn():
 
 
 def release_conn(conn):
-    pool.putconn(conn)
+    if conn:
+        pool.putconn(conn)
 
-
-# =====================================================
-# CLOSE DATABASE POOL
-# =====================================================
 
 def close_pool():
-
     global pool
 
     if pool is None:
         return
 
     print("[DB] Closing connection pool...")
-
     pool.closeall()
-
     pool = None
-
     print("[DB] Connection pool closed.")

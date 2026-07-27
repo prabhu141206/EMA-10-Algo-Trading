@@ -38,6 +38,10 @@ from db.init_tables import init_tables
 from db.worker import start_db_worker
 
 
+
+from System.shutdown_manager import ShutdownManager
+
+
 class StartupManager:
 
     def __init__(self):
@@ -49,6 +53,8 @@ class StartupManager:
         self.tick_handler = None
         self.spot_ws = None
         self.spot_ws_thread = None
+
+        self.shutdown_manager = None
 
 
     # =====================================================
@@ -98,7 +104,8 @@ class StartupManager:
         # =====================================================
 
         self.tick_handler = TickHandler(
-            self.option_ws
+            self.option_ws,
+            self.shutdown_manager
         )
 
         # =====================================================
@@ -138,6 +145,8 @@ class StartupManager:
             daemon=True
         )
 
+
+
         self.db_worker.start()
 
 
@@ -161,19 +170,63 @@ class StartupManager:
     def start(self):
 
         # =====================================================
-        # INITIALIZE ALL STARTUP THINGS
+        # DATABASE
         # =====================================================
         self._initialize_db()
+
+        # =====================================================
+        # AUTHENTICATION
+        # =====================================================
         self._initialize_auth()
+
+        # =====================================================
+        # OPTION WEBSOCKET
+        # =====================================================
         self._initialize_option_websocket()
+
+        # =====================================================
+        # CREATE SHUTDOWN MANAGER
+        # (Only create it here. Do not initialize yet.)
+        # =====================================================
+        self.shutdown_manager = ShutdownManager()
+
+        # =====================================================
+        # TICK HANDLER + SPOT WEBSOCKET
+        # TickHandler receives ShutdownManager
+        # =====================================================
         self._initialize_spot_websocket()
+
+        # =====================================================
+        # NOW INITIALIZE SHUTDOWN MANAGER
+        # All dependencies exist at this point.
+        # =====================================================
+        self.shutdown_manager.initialize(
+            spot_ws=self.spot_ws,
+            option_ws=self.option_ws,
+
+            spot_ws_thread=self.spot_ws_thread,
+            option_ws_thread=self.option_ws_thread,
+
+            db_worker_thread=self.db_worker,
+
+            state_machine=self.tick_handler.state_machine,
+            engine=self.tick_handler.engine,
+
+            auth=auth
+        )
+
+        # =====================================================
+        # STARTUP MESSAGE
+        # =====================================================
         self._initial_msg()
-        
-        
-      
+
         print("Starting EMA Trend Algo...")
         print("Waiting for SmartAPI ticks...\n")
 
+        # =====================================================
+        # KEEP APPLICATION ALIVE
+        # =====================================================
+        self.run()
 
         
 

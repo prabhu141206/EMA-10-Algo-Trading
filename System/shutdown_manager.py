@@ -18,6 +18,10 @@ class ShutdownManager:
 
     def __init__(self):
 
+        # Add shutdowns flag
+        self.shutdown_started = False
+        self.partial_shutdown_done = False
+
         # Broker Components
         self.spot_ws = None
         self.option_ws = None
@@ -60,7 +64,7 @@ class ShutdownManager:
         self.spot_ws_thread = spot_ws_thread
         self.option_ws_thread = option_ws_thread
 
-        self.db_worker = db_worker_thread
+        self.db_worker_thread = db_worker_thread
 
         self.state_machine = state_machine
         self.engine = engine
@@ -106,14 +110,14 @@ class ShutdownManager:
 
 
 
-    print("[SHUTDOWN] DB Worker stopped.")
+        print("[SHUTDOWN] DB Worker stopped.")
     # =====================================================
     # WAIT FOR WEBSOCKET THREADS
     # =====================================================
 
     def wait_for_websocket_threads(self):
 
-        print("[SHUTDOWN] Waiting for WebSocket threads...")
+       
 
         if self.spot_ws_thread is not None:
             self.spot_ws_thread.join()
@@ -151,6 +155,17 @@ class ShutdownManager:
 
         print("[SHUTDOWN] Logging out from SmartAPI...")
 
+        if self.auth is not None:
+
+            try:
+                self.auth.logout()
+
+                print("[SHUTDOWN] SmartAPI logout successful.")
+
+            except Exception as e:
+
+                print(f"[SHUTDOWN] Logout failed: {e}")
+
 
     # =====================================================
     # STOP OPTION WEBSOCKET
@@ -181,6 +196,17 @@ class ShutdownManager:
 
         print("[SHUTDOWN] Spot WebSocket stopped.")
 
+    
+    # =====================================================
+    # TRADE COMPLETED
+    # =====================================================
+
+    def trade_completed(self):
+
+        print("[SHUTDOWN] Active trade completed.")
+
+        self.shutdown()
+
 
     # =====================================================
     # SHUTDOWN SYSTEM
@@ -188,17 +214,29 @@ class ShutdownManager:
 
     def shutdown(self):
 
+        if self.shutdown_started:
+            print("[SHUTDOWN] Shutdown already in progress.")
+            return
+
+        self.shutdown_started = True
+
+        
+
         print("\n" + "=" * 60)
         print("[SHUTDOWN] Starting graceful shutdown...")
         print("=" * 60)
 
-        self.stop_spot_websocket()
+        if not self.partial_shutdown_done :
+            self.stop_spot_websocket()
+
+            
         self.stop_option_websocket()
         self.wait_for_websocket_threads()
         self.flush_database_queue()
         self.stop_db_worker()
         self.wait_for_db_worker()
         self.close_database()
+        self.logout()
 
         print("[SHUTDOWN] Shutdown complete.")
 
@@ -238,16 +276,49 @@ class ShutdownManager:
         print("[SHUTDOWN] Strategy State : IN_TRADE")
         print("[SHUTDOWN] Initiating forced trade exit...")
 
-        self.engine.force_exit()
+        self.partial_shutdown()
 
         print("[SHUTDOWN] Trade closed successfully.")
 
-        self.shutdown()
 
+    
+    
+
+    # =====================================================
+    # PARTIAL SHUTDOWN SYSTEM
+    # =====================================================
+    def partial_shutdown(self):
+
+        if self.partial_shutdown_done:
+            return
+
+        self.partial_shutdown_done = True
+
+        print("[SHUTDOWN] Starting partial shutdown...")
+
+        self.stop_spot_websocket()
+
+        print("[SHUTDOWN] Waiting for active trade to complete...")
     
 
 
+    # =====================================================
+    # IS FORCE EXIT TIME
+    # =====================================================
 
+    def is_force_exit_time(self):
+
+        current_time = datetime.now().time()
+
+        force_exit_time = time(15, 25)
+
+        return current_time >= force_exit_time
+
+    def is_time_to_shutdown(self):
+
+        current_time = datetime.now().time()
+
+        return current_time >= time(15, 0)
 
 
     # =====================================================

@@ -8,7 +8,7 @@ from alerts.message_templates import trade_entry, option_entry_alert, option_exi
 from utils.time_utils import epoch_to_ist
 from db.logger import db_logger
 import time
-#from System.shutdown_manager import shutdown_manager
+from System.shutdown_manager import shutdown_manager
 
 class VirtualTradeEngine:
 
@@ -123,6 +123,12 @@ class VirtualTradeEngine:
     # =====================================================
 
     def on_option_tick(self, price, ts):
+
+        if shutdown_manager.partial_shutdown_done:
+
+            if shutdown_manager.is_force_exit_time():
+                self.force_exit()
+                return
 
         # Always keep the latest option price
         self.last_option_price = price
@@ -365,8 +371,8 @@ class VirtualTradeEngine:
         # =====================================================
         # FUTURE
         # =====================================================
-        # if shutdown_manager.shutdown_pending:
-        #     shutdown_manager.shutdown()
+        if shutdown_manager.check_market_close():
+            shutdown_manager.evaluate_strategy_state()
 
         
 

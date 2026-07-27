@@ -2,6 +2,7 @@ from SmartApi.smartWebSocketV2 import SmartWebSocketV2
 from logzero import logger
 
 from .token_resolver import token_resolver
+import traceback
 
 class OptionWebsocket:
 
@@ -28,22 +29,22 @@ class OptionWebsocket:
 
     def on_data(self, wsapp, message):
 
-        """Handle incoming tick data."""
-        if "last_traded_price" not in message:
-            return
-        
-        if self.engine is None:
-            return
-        
-        #print(message)
+        try:
 
-        
+            if "last_traded_price" not in message:
+                return
 
-        self.engine.on_option_tick(
-            price = message['last_traded_price'] / 100,
-            ts =  message['exchange_timestamp']
+            if self.engine is None:
+                return
 
-        )
+            self.engine.on_option_tick(
+                price=message["last_traded_price"] / 100,
+                ts=message["exchange_timestamp"]
+            )
+
+        except Exception:
+            traceback.print_exc()
+            raise
 
         
        
@@ -61,32 +62,53 @@ class OptionWebsocket:
     def subscribe(self, symbol, engine):
 
         if not self.connected:
+            print("[OPTION WS] Not connected")
             return
 
         self.current_symbol = symbol
         self.engine = engine
 
+        try:
+            # Resolve token
+            token = token_resolver.get_token(symbol)
 
+            if token is None:
+                raise ValueError(f"No token found for symbol: {symbol}")
 
-        token = token_resolver.get_token(symbol)
+            self.current_token = token
 
+            token_list = [
+                {
+                    "exchangeType": 2,
+                    "tokens": [str(token)]   # SmartAPI expects string tokens
+                }
+            ]
 
-        self.current_token = token
+            print("\n========== STAGE 3 ==========")
+            print("[STAGE 3] Subscribing")
+            print(f"Symbol      : {symbol}")
+            print(f"Token       : {token}")
+            print(f"Payload     : {token_list}")
+            print(f"Connected   : {self.connected}")
+            print(f"Correlation : {self.correlation_id}")
+            print(f"Mode        : {self.mode}")
 
-        token_list = [
-            {
-                "exchangeType": 2,
-                "tokens": [token]
-            }
-        ]
+            self.sws.subscribe(
+                self.correlation_id,
+                self.mode,
+                token_list
+            )
 
-        print(f"[OPTION WS] Subscribing -> {symbol}")
+            print("[OPTION WS] Subscription request sent successfully.")
+            print("=============================\n")
 
-        self.sws.subscribe(
-            self.correlation_id,
-            self.mode,
-            token_list
-        )
+        except Exception as e:
+            print("\n========== SUBSCRIBE ERROR ==========")
+            print(f"Symbol : {symbol}")
+            print(f"Error  : {e}")
+            traceback.print_exc()
+            print("=====================================\n")
+            raise
 
 
     def unsubscribe(self):

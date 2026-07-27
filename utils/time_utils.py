@@ -7,8 +7,13 @@ MARKET_START = dt_time(9, 15)
 MARKET_END   = dt_time(15, 30)
 ENTRY_CUTOFF = dt_time(15, 15)
 
-def epoch_to_ist(epoch_seconds: int) -> datetime:
-    return datetime.fromtimestamp(epoch_seconds, tz=IST)
+def epoch_to_ist(epoch: int) -> datetime:
+
+    # If timestamp is in milliseconds, convert to seconds
+    if epoch > 10_000_000_000:
+        epoch = epoch / 1000
+
+    return datetime.fromtimestamp(epoch, tz=IST)
 
 def epoch_to_ist_time(epoch_seconds: int):
     return epoch_to_ist(epoch_seconds).time()

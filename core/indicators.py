@@ -5,7 +5,7 @@
 
 
 from tvDatafeed import TvDatafeed, Interval
-
+import time
 
 class EMA:
     def __init__(
@@ -38,17 +38,30 @@ class EMA:
         Fetch historical candles from TradingView
         and initialize the current EMA value.
         """
+
         tv = TvDatafeed()
 
-        df = tv.get_hist(
-            symbol=symbol,
-            exchange=exchange,
-            interval=interval,
-            n_bars=bars
-        )
+        while True:
+            
+            try:
+                df = tv.get_hist(
+                    symbol=symbol,
+                    exchange=exchange,
+                    interval=interval,
+                    n_bars=bars
+                )
 
-        if df is None or df.empty:
-            raise Exception("Unable to fetch historical data.")
+                if df is None or df.empty:
+
+                    raise Exception("Unable to fetch historical data.")
+
+                else:
+                    break
+
+            except:
+                print("unable to fetch retrying........")
+                time.sleep(6)
+
 
         closes = df["close"].tolist()
 
