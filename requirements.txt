@@ -10,3 +10,4 @@ protobuf
 redis
 tradingview-datafeed
 smartapi-python
+logzero
