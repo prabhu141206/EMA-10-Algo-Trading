@@ -9,3 +9,4 @@ python-telegram-bot
 protobuf
 redis
 tradingview-datafeed
+smartapi-python
