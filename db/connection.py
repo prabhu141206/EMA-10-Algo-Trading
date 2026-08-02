@@ -1,10 +1,10 @@
-import os
+from config.settings import DB_HOST, DB_NAME, DB_USER, DB_PASS, DB_PORT,DATABASE_URL
 import psycopg2
 
 
 def create_connection():
 
-    database_url = os.getenv("DATABASE_URL")
+    database_url = DATABASE_URL
 
     # ==============================================
     # Cloud Database (Railway / Supabase / Neon)
@@ -19,9 +19,9 @@ def create_connection():
     # ==============================================
 
     return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        port=os.getenv("DB_PORT"),
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS,
+        port=DB_PORT,
     )
