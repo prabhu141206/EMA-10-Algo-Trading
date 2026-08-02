@@ -11,3 +11,4 @@ redis
 tradingview-datafeed
 smartapi-python
 logzero
+pyotp
