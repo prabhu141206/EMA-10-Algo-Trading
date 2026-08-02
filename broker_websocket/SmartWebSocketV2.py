@@ -76,6 +76,11 @@ class SmartWebSocketV2(object):
         self.retry_delay = retry_delay
         self.retry_multiplier = retry_multiplier
         self.retry_duration = retry_duration        
+
+        # dedicated flag for shutting down the connection gracefully
+        self.shutdown_requested = False
+
+
         # Create a log folder based on the current date
         log_folder = time.strftime("%Y-%m-%d", time.localtime())
         log_folder_path = os.path.join("logs", log_folder)  # Construct the full path to the log folder
@@ -307,12 +312,21 @@ class SmartWebSocketV2(object):
         """
         Closes the connection
         """
+        # custom logic to close the connection
+        self.shutdown_requested = True
+
         self.RESUBSCRIBE_FLAG = False
         self.DISCONNECT_FLAG = True
         if self.wsapp:
             self.wsapp.close()
 
     def _on_error(self, wsapp, error):
+
+        # Adding a check to see if shutdown has been requested before attempting to reconnect (custom logic)
+        if self.shutdown_requested:
+            logger.info("[SPOT WS] Shutdown requested. Reconnect cancelled.")
+            return
+
         self.RESUBSCRIBE_FLAG = True
         if self.current_retry_attempt < self.MAX_RETRY_ATTEMPT:
             logger.warning(f"Attempting to resubscribe/reconnect (Attempt {self.current_retry_attempt + 1})...")

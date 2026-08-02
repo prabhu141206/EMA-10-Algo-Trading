@@ -278,7 +278,7 @@ class ShutdownManager:
 
         self.partial_shutdown()
 
-        print("[SHUTDOWN] Trade closed successfully.")
+        
 
 
     

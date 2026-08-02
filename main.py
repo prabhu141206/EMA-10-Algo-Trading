@@ -1,50 +1,56 @@
-# =========================================================
-# MAIN ENTRYPOINT
-# =========================================================
-
-
-from System.startup_manger import StartupManager
-from utils.Market_calender import market_status
 import time
+
+from system.Startup_manger import StartupManager
+from utils.market_status import get_market_status
+from utils.schedular import get_next_start_time
 
 def main():
 
+    while True:
 
-    
+        # =====================================================
+        # CHECK MARKET STATUS
+        # =====================================================
 
-    # =====================================================
-    # 1️⃣ WAIT FOR MARKET OPEN
-    # =====================================================
+        is_live, waiting_seconds = get_market_status()
 
-    if not market_status.is_market_live():
-    
-        print(
-            "\n🔔 Market Closed.\n"
-            "Waiting for next trading session...\n"
-        )
-    
-        current, next_open, seconds = (
-            market_status.get_next_trading_session_info()
-        )
-    
-        print(f"Current Time : {current}")
-        print(f"Next Session : {next_open}")
-        print(f"Waiting      : {seconds} sec\n")
-    
-        time.sleep(int(seconds))
-    
-    print(
-        "\n🔔 Market Open."
-        "\nStarting Trading System...\n"
-    )
+        # -----------------------------------------------------
+        # MARKET NOT LIVE
+        # -----------------------------------------------------
 
-    startup = StartupManager()
-    startup.start()
-    startup.run()
+        if not is_live:
 
-# =========================================================
-# PROGRAM ENTRYPOINT
-# =========================================================
+            # Market will open today
+            if waiting_seconds > 0:
+
+                print(f"[SYSTEM] Market not open.")
+                print(f"[SYSTEM] Waiting {int(waiting_seconds)} seconds...\n")
+
+                time.sleep(waiting_seconds)
+
+                continue
+
+            # Market already closed
+            current, next_start, waiting_seconds = get_next_start_time()
+
+            print(f"[SYSTEM] Trading session completed.")
+            print(f"[SYSTEM] Current Time : {current}")
+            print(f"[SYSTEM] Next Session : {next_start}")
+            print(f"[SYSTEM] Waiting {int(waiting_seconds)} seconds...\n")
+
+            time.sleep(waiting_seconds)
+
+            continue
+
+        # =====================================================
+        # START TRADING SYSTEM
+        # =====================================================
+
+        print("[SYSTEM] Starting Trading System...\n")
+
+        startup = StartupManager()
+        startup.start()
+
 
 if __name__ == "__main__":
     main()

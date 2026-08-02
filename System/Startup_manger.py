@@ -39,7 +39,7 @@ from db.worker import start_db_worker
 
 
 
-from System.shutdown_manager import ShutdownManager
+from system.shutdown_manager import ShutdownManager
 
 
 class StartupManager:

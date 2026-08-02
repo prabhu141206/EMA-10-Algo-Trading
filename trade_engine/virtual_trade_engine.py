@@ -8,7 +8,7 @@ from alerts.message_templates import trade_entry, option_entry_alert, option_exi
 from utils.time_utils import epoch_to_ist
 from db.logger import db_logger
 import time
-from System.shutdown_manager import shutdown_manager
+from system.shutdown_manager import shutdown_manager
 
 class VirtualTradeEngine:
 
@@ -124,6 +124,7 @@ class VirtualTradeEngine:
 
     def on_option_tick(self, price, ts):
 
+        # Check to force exit the trade when market get closed 
         if shutdown_manager.partial_shutdown_done:
 
             if shutdown_manager.is_force_exit_time():
