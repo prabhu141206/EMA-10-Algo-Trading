@@ -33,7 +33,7 @@ DB_PORT = os.getenv("DB_PORT")
 # =====================================================
 # STORAGE
 # =====================================================
-local_storage = os.getenv("LOCAL_STORAGE", "False").lower() == "true"
+LOCAL_STORAGE =os.getenv("LOCAL_STORAGE", "False").lower() == "true"
 REDIS_URL = os.getenv("REDIS_URL")
 
 
