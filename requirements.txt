@@ -1,10 +1,12 @@
 requests
 websocket-client
 python-dateutil
-fyers-apiv3
+pyotp
 python-dotenv
 pytz
 psycopg2-binary
 python-telegram-bot
 protobuf
 redis
+tradingview-datafeed
+smartapi-python
