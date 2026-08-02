@@ -30,6 +30,12 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_PORT = os.getenv("DB_PORT")
 
+# =====================================================
+# STORAGE
+# =====================================================
+local_storage = os.getenv("LOCAL_STORAGE", "False").lower() == "true"
+REDIS_URL = os.getenv("REDIS_URL")
+
 
 # ==========================================================
 # HARD FAILS
