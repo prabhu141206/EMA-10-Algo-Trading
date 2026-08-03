@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta,time
 from utils.market_calender import is_market_day
-
+from config.settings import IST
 
 TRADING_START_TIME = time(hour=9, minute=15)
 
 def get_next_start_time():
 
-    current = datetime.now()
+    current = datetime.now(IST)
 
     # Start checking from tomorrow
     next_date = current.date() + timedelta(days=1)
