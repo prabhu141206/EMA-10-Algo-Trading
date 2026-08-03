@@ -1,7 +1,7 @@
 from datetime import datetime, time
 
 from utils.market_calender import is_market_day
-
+from config.settings import IST
 
 MARKET_OPEN = time(9, 15)
 MARKET_CLOSE = time(15, 30)
@@ -9,7 +9,7 @@ MARKET_CLOSE = time(15, 30)
 
 def get_market_status():
 
-    current = datetime.now()
+    current = datetime.now(IST)
 
     # Holiday / Weekend
     if not is_market_day(current.date()):
@@ -26,7 +26,8 @@ def get_market_status():
 
         market_open = datetime.combine(
             current.date(),
-            MARKET_OPEN
+            MARKET_OPEN,
+            tzinfo=IST
         )
 
         waiting_seconds = (
