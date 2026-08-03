@@ -32,11 +32,14 @@ def main():
 
             # Market already closed
             current, next_start, waiting_seconds = get_next_start_time()
-
+            hours = int(waiting_seconds // 3600)
+            minutes = int((waiting_seconds % 3600) // 60)
+            
             print(f"[SYSTEM] Trading session completed.")
             print(f"[SYSTEM] Current Time : {current}")
             print(f"[SYSTEM] Next Session : {next_start}")
             print(f"[SYSTEM] Waiting {int(waiting_seconds)} seconds...\n")
+            print(f"[SYSTEM] Waiting {hours}h {minutes}m until next trading session...")
 
             time.sleep(waiting_seconds)
 
