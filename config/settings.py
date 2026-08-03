@@ -1,7 +1,13 @@
 import os
 from dotenv import load_dotenv
-
+from zoneinfo import ZoneInfo
 load_dotenv()
+
+
+# ==========================================================
+# Setting up the time zone
+# ==========================================================
+IST = ZoneInfo("Asia/Kolkata")
 
 # ==========================================================
 # TELEGRAM CONFIGURATION
