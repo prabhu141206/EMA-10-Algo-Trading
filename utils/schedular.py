@@ -18,7 +18,8 @@ def get_next_start_time():
     # Combine date + trading start time
     next_start = datetime.combine(
         next_date,
-        TRADING_START_TIME
+        TRADING_START_TIME,
+        tzinfo=IST
     )
 
     # Calculate waiting time
