@@ -3,7 +3,7 @@ from core.candle_builder import CandleBuilder
 from core.signal_engine import SignalEngine
 from core.breakout_watcher import BreakoutWatcher
 from trade_engine.virtual_trade_engine import VirtualTradeEngine
-# from System.shutdown_manager import shutdown_manager
+from System.shutdown_manager import shutdown_manager
 
 
 class TickHandler:
@@ -54,6 +54,14 @@ class TickHandler:
         if candle_closed:
 
             # =====================================
+            # CHECK IF TIME IS UP
+            # =====================================
+
+            if self.shutdown_manager.is_time_to_shutdown():
+                self.shutdown_manager.evaluate_strategy_state()
+                return 
+
+            # =====================================
             # INITIAL SYNCHRONIZATION
             # =====================================
 
@@ -81,9 +89,7 @@ class TickHandler:
                 f"C={closed_candle['close']}"
             )
 
-            if self.shutdown_manager.is_time_to_shutdown():
-                self.shutdown_manager.evaluate_strategy_state()
-                return 
+            
 
             if self.state_machine.is_trigger_armed():
 
@@ -112,9 +118,6 @@ class TickHandler:
 
             print("=" * 60)
 
-            #shutdown_manager.check_market_close(
-            #    self.state_machine
-            #)
 
             return
         # ----------------------------------------
