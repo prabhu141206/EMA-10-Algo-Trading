@@ -13,6 +13,7 @@ from datetime import datetime, time
 from db.worker import stop_db_worker
 from db.queue import db_queue
 from db.pool import close_pool
+from config.settings import IST
 
 class ShutdownManager:
 
@@ -43,7 +44,7 @@ class ShutdownManager:
 
 
     # =====================================================
-    # GIVIN ALL ACCESS TO SHUTDOWN MANAGER
+    # GIVING ALL ACCESS TO SHUTDOWN MANAGER
     # =====================================================
 
     def initialize(
@@ -308,7 +309,7 @@ class ShutdownManager:
 
     def is_force_exit_time(self):
 
-        current_time = datetime.now().time()
+        current_time = datetime.now(IST).time()
 
         force_exit_time = time(15, 25)
 
@@ -355,7 +356,7 @@ class ShutdownManager:
 
     def check_market_close(self):
 
-        current_time = datetime.now().time()
+        current_time = datetime.now(IST).time()
 
         market_close_time = time(15, 0)
 
