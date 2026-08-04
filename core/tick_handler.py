@@ -3,7 +3,7 @@ from core.candle_builder import CandleBuilder
 from core.signal_engine import SignalEngine
 from core.breakout_watcher import BreakoutWatcher
 from trade_engine.virtual_trade_engine import VirtualTradeEngine
-from System.shutdown_manager import shutdown_manager
+from system.shutdown_manager import shutdown_manager
 
 
 class TickHandler:
